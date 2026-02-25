@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="20" fill="white"/>
+  {/* M */}
+  <path d="M10 80 V30 L30 60 L50 30 V80" fill="none" stroke="#005A9C" stroke-width="10" stroke-linejoin="round" />
+  {/* N */}
+  <path d="M60 80 V30 L90 80 V30" fill="none" stroke="#FF6422" stroke-width="10" stroke-linejoin="round" />
+  {/* Arrow */}
+  <path d="M90 80 L110 20 M110 20 L95 20 M110 20 L110 35" fill="none" stroke="#00AEEF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  {/* Clock Circle */}
+  <circle cx="95" cy="85" r="22" fill="none" stroke="#005A9C" stroke-width="6" />
+  {/* Clock Center */}
+  <circle cx="95" cy="85" r="2" fill="#FF6422" />
+  {/* Hands */}
+  <path d="M95 85 L95 72" stroke="#005A9C" stroke-width="4" stroke-linecap="round" />
+  <path d="M95 85 L108 85" stroke="#FF6422" stroke-width="4" stroke-linecap="round" />
+</svg>
