@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { getAvatarPlaceholder, getInitials } from "@/utils/avatar";
-import Button from "@/components/ui/Button";
+import { useDashboardSidebar } from "@/contexts/DashboardSidebarContext";
 import AIVisibilityTab from "@/components/toolkit/AIVisibilityTab";
 import PPCTab from "@/components/toolkit/PPCTab";
 import KeywordResearchTab from "@/components/toolkit/KeywordResearchTab";
@@ -11,6 +10,7 @@ import CompetitorTab from "@/components/toolkit/CompetitorTab";
 import ContentMarketingTab from "@/components/toolkit/ContentMarketingTab";
 import LocalSeoTab from "@/components/toolkit/LocalSeoTab";
 import AdvancedSeoTab from "@/components/toolkit/AdvancedSeoTab";
+import FloatingChatbot from "@/components/FloatingChatbot";
 
 const TABS = [
   { id: "ai-visibility", label: "AI Visibility", Component: AIVisibilityTab },
@@ -30,56 +30,59 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("ai-visibility");
+  const sidebarContext = useDashboardSidebar();
+  const sidebarOpen = sidebarContext?.sidebarOpen ?? false;
   const current = TABS.find((t) => t.id === activeTab);
   const Component = current?.Component;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-lg font-semibold text-white ${getAvatarPlaceholder(user.email)}`}
-          >
-            {getInitials(user.email)}
+    <div className="flex min-h-[calc(100vh-4rem)] bg-background text-foreground">
+      {/* Sidebar - only visible when hamburger in nav bar is clicked; no MARKET NOW, no email; 7 features only */}
+      {sidebarOpen && (
+        <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-muted">
+          <div className="flex-1 overflow-y-auto px-3 pt-4 pb-4">
+            <div className="rounded-2xl border border-border bg-card shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+              <div className="rounded-t-2xl border-b border-border bg-background/30 px-4 py-3">
+                <h2 className="text-sm font-semibold text-foreground tracking-wide">Mini Semrush</h2>
+              </div>
+              <nav className="flex flex-col py-1">
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={`text-left px-4 py-3 text-sm font-medium transition-all duration-200 border-b border-border/60 last:border-b-0 ${
+                      activeTab === t.id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-foreground">{user.email}</p>
-            <p className="text-xs font-mono text-muted-foreground truncate max-w-[200px] sm:max-w-none">
-              {user.id}
-            </p>
+          <div className="border-t border-border p-3">
+            <Link
+              href="/"
+              className="block rounded-xl border border-border bg-card px-3 py-2.5 text-center text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-background/40 hover:text-foreground"
+            >
+              Home
+            </Link>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/">
-            <Button variant="outline" size="sm">Home</Button>
-          </Link>
-        </div>
-      </div>
+        </aside>
+      )}
 
-      <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm overflow-hidden">
-        <div className="border-b border-border bg-muted/30 px-2 py-2">
-          <h1 className="text-xl font-bold text-foreground px-2 mb-2">Mini Semrush – All In One Toolkit</h1>
-          <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-thin">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id)}
-                className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === t.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background/80 text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="p-6 min-h-[400px]">
+      {/* Right: main content area */}
+      <div className="min-w-0 flex-1 overflow-auto bg-background">
+        <div className="p-6">
           {Component && <Component />}
         </div>
       </div>
+
+      {/* Floating chatbot - bottom right on every page */}
+      <FloatingChatbot />
     </div>
   );
 }

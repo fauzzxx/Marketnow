@@ -435,7 +435,7 @@ function LocalDashboard() {
         <h4 className="text-sm font-bold text-gray-800">Map tracking</h4>
         <div className="mt-4 flex items-center gap-4 border-t pt-4">
           <div className="flex-1">
-            <div className="text-[10px] text-gray-400">Local business' average rank</div>
+            <div className="text-[10px] text-gray-400">Local business&apos; average rank</div>
             <div className="text-2xl font-black text-gray-800 tabular-nums">{rank.toFixed(2)}</div>
           </div>
           <div className="h-12 w-24 bg-sky-50/50 rounded-lg flex items-center justify-center p-1 border border-sky-100">

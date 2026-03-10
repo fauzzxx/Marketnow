@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+const CHART_COLORS = ["#6366f1", "#8b5cf6", "#22c55e", "#eab308"];
 
 export default function AdvancedSeoTab() {
   const [subTab, setSubTab] = useState<"audit" | "onpage" | "position" | "backlinks">("audit");
@@ -130,9 +133,33 @@ export default function AdvancedSeoTab() {
             Run Site Audit
           </Button>
           {auditResult && (
-            <div className="rounded-xl border border-border bg-card/80 p-4 space-y-2">
-              <p><span className="text-muted-foreground">Title:</span> {auditResult.title}</p>
-              <p><span className="text-muted-foreground">Meta description:</span> {auditResult.meta_description}</p>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                <h4 className="mb-2 text-sm font-medium text-card-foreground">Page elements length</h4>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: "Title", chars: (auditResult.title || "").length, fill: CHART_COLORS[0] },
+                        { name: "Meta desc", chars: (auditResult.meta_description || "").length, fill: CHART_COLORS[1] },
+                      ]}
+                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                    >
+                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                      <Bar dataKey="chars" radius={[4, 4, 0, 0]}>
+                        <Cell fill={CHART_COLORS[0]} />
+                        <Cell fill={CHART_COLORS[1]} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4 space-y-2 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+                <p><span className="text-muted-foreground">Title:</span> {auditResult.title}</p>
+                <p><span className="text-muted-foreground">Meta description:</span> {auditResult.meta_description}</p>
+              </div>
             </div>
           )}
         </>
@@ -156,7 +183,25 @@ export default function AdvancedSeoTab() {
             Analyze On-Page SEO
           </Button>
           {onpageResult !== null && (
-            <p className="text-card-foreground">Keyword count: <strong>{onpageResult}</strong></p>
+            <div className="space-y-2">
+              <div className="rounded-2xl border border-border bg-card p-4 max-w-xs shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                <h4 className="mb-2 text-sm font-medium text-card-foreground">Keyword occurrences</h4>
+                <div className="h-20">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[{ name: "Keyword count", value: onpageResult, fill: CHART_COLORS[0] }]}
+                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                    >
+                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <p className="text-card-foreground">Keyword count: <strong>{onpageResult}</strong></p>
+            </div>
           )}
         </>
       )}
@@ -179,13 +224,37 @@ export default function AdvancedSeoTab() {
             Check Ranking
           </Button>
           {positionResult && (
-            <p className="text-card-foreground">
-              {positionResult.found ? (
-                <>Position: <strong>{positionResult.position}</strong></>
-              ) : (
-                "Not found in top 100."
-              )}
-            </p>
+            <div className="space-y-2">
+              <div className="rounded-2xl border border-border bg-card p-4 max-w-xs shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                <h4 className="mb-2 text-sm font-medium text-card-foreground">Ranking position</h4>
+                <div className="h-20">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        {
+                          name: positionResult.found ? `Position ${positionResult.position}` : "Not in top 100",
+                          value: positionResult.found ? 101 - (positionResult.position ?? 0) : 0,
+                          fill: positionResult.found ? CHART_COLORS[2] : CHART_COLORS[3],
+                        },
+                      ]}
+                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                    >
+                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 11 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "currentColor", fontSize: 12 }} hide />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} formatter={(_, __, props) => [positionResult.found ? `#${positionResult.position}` : "Not in top 100", "Position"]} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <p className="text-card-foreground">
+                {positionResult.found ? (
+                  <>Position: <strong>{positionResult.position}</strong></>
+                ) : (
+                  "Not found in top 100."
+                )}
+              </p>
+            </div>
           )}
         </>
       )}
@@ -203,7 +272,25 @@ export default function AdvancedSeoTab() {
             Analyze Backlinks
           </Button>
           {backlinkResult !== null && (
-            <p className="text-card-foreground">Estimated mentions: <strong>{backlinkResult.toLocaleString()}</strong></p>
+            <div className="space-y-2">
+              <div className="rounded-2xl border border-border bg-card p-4 max-w-xs shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                <h4 className="mb-2 text-sm font-medium text-card-foreground">Estimated mentions</h4>
+                <div className="h-20">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[{ name: "Mentions", value: Math.min(backlinkResult, 1000000), fill: CHART_COLORS[0] }]}
+                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                    >
+                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "currentColor", fontSize: 12 }} tickFormatter={(v) => (v >= 1e6 ? `${v / 1e6}M` : v >= 1e3 ? `${v / 1e3}k` : String(v))} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} formatter={(v) => [backlinkResult.toLocaleString(), "Estimated mentions"]} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <p className="text-card-foreground">Estimated mentions: <strong>{backlinkResult.toLocaleString()}</strong></p>
+            </div>
           )}
         </>
       )}

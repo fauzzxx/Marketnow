@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+const CHART_COLORS = ["#6366f1", "#8b5cf6", "#22c55e", "#eab308"];
 
 export default function ContentMarketingTab() {
   const [subTab, setSubTab] = useState<"topic" | "seo" | "ai">("topic");
@@ -111,22 +114,74 @@ export default function ContentMarketingTab() {
             Research Topic
           </Button>
           {topicResult && (
-            <div className="space-y-4 rounded-xl border border-border bg-card/80 p-4">
-              <div>
-                <h4 className="font-medium text-card-foreground">Related Searches</h4>
-                <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                  {topicResult.related_searches.map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                </ul>
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                  <h4 className="mb-2 font-medium text-card-foreground">Topic mix</h4>
+                  <div className="h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: "Related Searches", value: topicResult.related_searches.length, fill: CHART_COLORS[0] },
+                            { name: "People Also Ask", value: topicResult.people_also_ask.length, fill: CHART_COLORS[1] },
+                          ]}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={56}
+                          label={({ name, value }) => `${name}: ${value}`}
+                        >
+                          <Cell fill={CHART_COLORS[0]} />
+                          <Cell fill={CHART_COLORS[1]} />
+                        </Pie>
+                        <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                  <h4 className="mb-2 font-medium text-card-foreground">Count by type</h4>
+                  <div className="h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: "Related", count: topicResult.related_searches.length, fill: CHART_COLORS[0] },
+                          { name: "PAA", count: topicResult.people_also_ask.length, fill: CHART_COLORS[1] },
+                        ]}
+                        margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                      >
+                        <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
+                        <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                          <Cell fill={CHART_COLORS[0]} />
+                          <Cell fill={CHART_COLORS[1]} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 className="font-medium text-card-foreground">People Also Ask</h4>
-                <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                  {topicResult.people_also_ask.map((q, i) => (
-                    <li key={i}>{q}</li>
-                  ))}
-                </ul>
+              <div className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+                <div>
+                  <h4 className="font-medium text-card-foreground">Related Searches</h4>
+                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                    {topicResult.related_searches.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium text-card-foreground">People Also Ask</h4>
+                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                    {topicResult.people_also_ask.map((q, i) => (
+                      <li key={i}>{q}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           )}
@@ -155,11 +210,38 @@ export default function ContentMarketingTab() {
             Analyze Content
           </Button>
           {seoResult && (
-            <div className="grid gap-2 rounded-xl border border-border bg-card/80 p-4 sm:grid-cols-2">
-              <p><span className="text-muted-foreground">Word count:</span> {seoResult.word_count}</p>
-              <p><span className="text-muted-foreground">Keyword count:</span> {seoResult.keyword_count}</p>
-              <p><span className="text-muted-foreground">Keyword density %:</span> {seoResult.keyword_density_percent}</p>
-              <p><span className="text-muted-foreground">Readability score:</span> {seoResult.readability_score}</p>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                <h4 className="mb-3 font-medium text-card-foreground">SEO metrics</h4>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: "Words", value: seoResult.word_count, fill: CHART_COLORS[0] },
+                        { name: "Keyword count", value: seoResult.keyword_count, fill: CHART_COLORS[1] },
+                        { name: "Density %", value: seoResult.keyword_density_percent, fill: CHART_COLORS[2] },
+                        { name: "Readability", value: Math.min(100, Math.max(0, seoResult.readability_score)), fill: CHART_COLORS[3] },
+                      ]}
+                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                    >
+                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {CHART_COLORS.map((fill, i) => (
+                          <Cell key={i} fill={fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="grid gap-2 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+                <p><span className="text-muted-foreground">Word count:</span> {seoResult.word_count}</p>
+                <p><span className="text-muted-foreground">Keyword count:</span> {seoResult.keyword_count}</p>
+                <p><span className="text-muted-foreground">Keyword density %:</span> {seoResult.keyword_density_percent}</p>
+                <p><span className="text-muted-foreground">Readability score:</span> {seoResult.readability_score}</p>
+              </div>
             </div>
           )}
         </>
@@ -177,7 +259,7 @@ export default function ContentMarketingTab() {
             Generate AI Suggestions
           </Button>
           {aiResult && (
-            <div className="rounded-xl border border-border bg-card/80 p-4">
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
               <pre className="whitespace-pre-wrap text-sm text-card-foreground">{aiResult}</pre>
             </div>
           )}

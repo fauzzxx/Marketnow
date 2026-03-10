@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Toast from "@/components/ui/Toast";
+import { DashboardSidebarProvider } from "@/contexts/DashboardSidebarContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,9 +32,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <Header showAuth={true} />
-        <main className="flex-1">{children}</main>
-        <Toast />
+        <DashboardSidebarProvider>
+          <Header showAuth={true} />
+          <main className="flex-1">{children}</main>
+          <Toast />
+        </DashboardSidebarProvider>
       </body>
     </html>
   );

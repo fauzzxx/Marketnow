@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+const CHART_COLORS = ["#22c55e", "#ef4444"];
 
 export default function LocalSeoTab() {
   const [businessName, setBusinessName] = useState("");
@@ -56,13 +59,65 @@ export default function LocalSeoTab() {
         Check Business Listing
       </Button>
       {found !== null && (
-        <div className="rounded-xl border border-border bg-card/80 p-4">
-          {found && business ? (
-            <pre className="overflow-auto text-sm text-card-foreground">
-              {JSON.stringify(business, null, 2)}
-            </pre>
-          ) : (
-            <p className="text-muted-foreground">No business listing found.</p>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+            <h4 className="mb-2 text-sm font-medium text-card-foreground">Listing status</h4>
+            <div className="h-20">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[{ name: found ? "Found" : "Not found", value: 1, fill: found ? CHART_COLORS[0] : CHART_COLORS[1] }]}
+                  layout="vertical"
+                  margin={{ left: 48, right: 8, top: 8, bottom: 8 }}
+                >
+                  <XAxis type="number" domain={[0, 1]} hide />
+                  <YAxis type="category" dataKey="name" width={48} tick={{ fill: "currentColor", fontSize: 12 }} />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {found && business && (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+              {(() => {
+                const b = business as { rating?: number; user_ratings_total?: number };
+                const hasMetrics = typeof b.rating === "number" || typeof b.user_ratings_total === "number";
+                if (hasMetrics) {
+                  const barData = [
+                    ...(typeof b.rating === "number" ? [{ name: "Rating", value: b.rating, fill: "#6366f1" }] : []),
+                    ...(typeof b.user_ratings_total === "number" ? [{ name: "Reviews", value: Math.min(b.user_ratings_total, 100), fill: "#8b5cf6" }] : []),
+                  ];
+                  return (
+                    <>
+                      <h4 className="mb-2 text-sm font-medium text-card-foreground">Business metrics</h4>
+                      <div className="h-24">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={barData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                            <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
+                            <YAxis tick={{ fill: "currentColor", fontSize: 12 }} domain={[0, typeof b.rating === "number" ? 5 : "auto"]} />
+                            <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} formatter={(v, name) => [name === "Reviews" && typeof b.user_ratings_total === "number" ? b.user_ratings_total : v, name]} />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                              {barData.map((d, i) => (
+                                <Cell key={i} fill={d.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </>
+                  );
+                }
+                return null;
+              })()}
+              <pre className="mt-4 overflow-auto text-sm text-card-foreground">
+                {JSON.stringify(business, null, 2)}
+              </pre>
+            </div>
+          )}
+          {!found && (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+              <p className="text-muted-foreground">No business listing found.</p>
+            </div>
           )}
         </div>
       )}

@@ -3,35 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --primary: #FF6422;
+  /* SEMrush-inspired base tokens (light mode) */
+  --semrush-primary: #ff642d;
+  --semrush-bg: #ffffff;
+  --semrush-surface: #ffffff;
+  --semrush-border: #e5e7eb;
+  --semrush-text: #111111;
+  --semrush-text-muted: #4b5563;
+
+  /* Tailwind semantic tokens (default = light) */
+  --background: var(--semrush-bg);
+  --foreground: var(--semrush-text);
+  --card: var(--semrush-surface);
+  --card-foreground: var(--semrush-text);
+  --primary: var(--semrush-primary);
   --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --ring: #FF6422;
-  
-  /* Semrush specific colors */
-  --semrush-purple-start: #2A195E;
-  --semrush-purple-end: #1B1040;
-  --semrush-orange: #FF6422;
-  --semrush-blue: #4B4EFC;
+  --muted: #f3f4f6;
+  --muted-foreground: var(--semrush-text-muted);
+  --border: var(--semrush-border);
+  --ring: var(--semrush-primary);
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --primary: #818cf8;
-  --primary-foreground: #0f172a;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --border: #334155;
-  --ring: #818cf8;
+  /* SEMrush-inspired premium dark palette */
+  --semrush-bg: #111111;
+  --semrush-surface: #1f1f1f;
+  --semrush-border: #2a2a2a;
+  --semrush-text: #ffffff;
+  --semrush-text-muted: #b3b3b3;
+
+  --background: var(--semrush-bg);
+  --foreground: var(--semrush-text);
+  --card: var(--semrush-surface);
+  --card-foreground: var(--semrush-text);
+  --primary: var(--semrush-primary);
+  --primary-foreground: #111111;
+  --muted: #1a1a1a;
+  --muted-foreground: var(--semrush-text-muted);
+  --border: var(--semrush-border);
+  --ring: var(--semrush-primary);
+
+  color-scheme: dark;
 }
 
 * {
@@ -48,7 +60,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 @layer utilities {

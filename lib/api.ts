@@ -128,4 +128,12 @@ export const api = {
       request<{ estimated_mentions: number }>("/api/advanced/backlinks", { method: "POST", body: { domain } }),
   },
   health: () => request<{ status: string }>("/api/health", { method: "GET" }),
+
+  chatbot: {
+    send: (message: string) =>
+      request<{ reply: string }>("/api/chatbot", {
+        method: "POST",
+        body: { message: message.trim() },
+      }),
+  },
 };
