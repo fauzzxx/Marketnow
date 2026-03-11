@@ -10,6 +10,9 @@ import CompetitorTab from "@/components/toolkit/CompetitorTab";
 import ContentMarketingTab from "@/components/toolkit/ContentMarketingTab";
 import LocalSeoTab from "@/components/toolkit/LocalSeoTab";
 import AdvancedSeoTab from "@/components/toolkit/AdvancedSeoTab";
+import YTScriptTab from "@/components/toolkit/YTScriptTab";
+import LinkedInPostTab from "@/components/toolkit/LinkedInPostTab";
+import BulkEmailsTab from "@/components/toolkit/BulkEmailsTab";
 import FloatingChatbot from "@/components/FloatingChatbot";
 
 const TABS = [
@@ -20,6 +23,9 @@ const TABS = [
   { id: "content", label: "Content Marketing", Component: ContentMarketingTab },
   { id: "local", label: "Local SEO", Component: LocalSeoTab },
   { id: "advanced", label: "Advanced SEO", Component: AdvancedSeoTab },
+  { id: "yt-script", label: "YT Script Generator", Component: YTScriptTab },
+  { id: "linkedin-post", label: "Auto LinkedIn Post", Component: LinkedInPostTab },
+  { id: "bulk-emails", label: "Bulk Emails", Component: BulkEmailsTab },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];

@@ -44,6 +44,24 @@ async function request<T>(
   }
 }
 
+async function requestFormData<T>(
+  endpoint: string,
+  formData: FormData
+): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData,
+    // Do not set Content-Type; browser sets multipart/form-data with boundary
+  });
+  const text = await res.text();
+  const data = (text ? JSON.parse(text) : {}) as T & { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error || res.statusText || `Request failed (${res.status})`);
+  }
+  return data as T;
+}
+
 export const api = {
   aiVisibility: {
     analyze: (brand_name: string, keyword: string) =>
@@ -81,12 +99,16 @@ export const api = {
       }>("/api/keyword-research/analyze", { method: "POST", body: { keyword } }),
   },
   competitor: {
-    analyze: (domain: string) =>
+    compare: (domain1: string, domain2: string, query: string) =>
       request<{
-        ranking_keywords: { keyword: string; position: number }[];
-        estimated_indexed_pages: number;
-        top_ranking_content: { title: string; url: string }[];
-      }>("/api/competitor/analyze", { method: "POST", body: { domain } }),
+        keywords_used: string[];
+        keyword_comparison: { keyword: string; company1_position: number | null; company2_position: number | null }[];
+        graph_data: { labels: string[]; company1: number[]; company2: number[] };
+        summary: {
+          domain1: { domain: string; indexed_pages: number; top_pages: { title: string; url: string }[] };
+          domain2: { domain: string; indexed_pages: number; top_pages: { title: string; url: string }[] };
+        };
+      }>("/api/competitor/compare", { method: "POST", body: { domain1, domain2, query } }),
   },
   content: {
     topicResearch: (keyword: string) =>
@@ -128,6 +150,59 @@ export const api = {
       request<{ estimated_mentions: number }>("/api/advanced/backlinks", { method: "POST", body: { domain } }),
   },
   health: () => request<{ status: string }>("/api/health", { method: "GET" }),
+
+  youtube: {
+    script: (idea: string) =>
+      request<{ idea: string; script: string }>("/api/youtube/script", {
+        method: "POST",
+        body: { idea: idea.trim() },
+      }),
+  },
+
+  linkedin: {
+    generate: (prompt: string) =>
+      request<{ post: string }>("/api/linkedin/generate", {
+        method: "POST",
+        body: { prompt: prompt.trim() },
+      }),
+    improve: (prompt: string, feedback: string) =>
+      request<{ post: string }>("/api/linkedin/improve", {
+        method: "POST",
+        body: { prompt: prompt.trim(), feedback: feedback.trim() },
+      }),
+    publish: (params: { email: string; password: string; post: string }) =>
+      request<{ status: string }>("/api/linkedin/publish", {
+        method: "POST",
+        body: {
+          email: params.email.trim(),
+          password: params.password,
+          post: params.post.trim(),
+        },
+      }),
+  },
+
+  email: {
+    sendBulk: (params: {
+      email: string;
+      password: string;
+      subject: string;
+      body: string;
+      column: number;
+      file: File;
+    }) => {
+      const formData = new FormData();
+      formData.append("email", params.email.trim());
+      formData.append("password", params.password);
+      formData.append("subject", params.subject.trim());
+      formData.append("body", params.body.trim());
+      formData.append("column", String(params.column));
+      formData.append("file", params.file);
+      return requestFormData<{
+        total_emails: number;
+        results: { email: string; status: string; error?: string }[];
+      }>("/api/email/send-bulk", formData);
+    },
+  },
 
   chatbot: {
     send: (message: string) =>
