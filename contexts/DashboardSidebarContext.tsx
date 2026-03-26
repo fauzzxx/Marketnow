@@ -10,7 +10,7 @@ type DashboardSidebarContextValue = {
 const DashboardSidebarContext = createContext<DashboardSidebarContextValue | null>(null);
 
 export function DashboardSidebarProvider({ children }: { children: ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   return (
     <DashboardSidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
       {children}

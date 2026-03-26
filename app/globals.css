@@ -2,69 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('https://api.fontshare.com/v2/css?f[]=satoshi@1,2&display=swap');
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root {
-  /* SEMrush-inspired base tokens (light mode) */
-  --semrush-primary: #ff642d;
-  --semrush-bg: #ffffff;
-  --semrush-surface: #ffffff;
-  --semrush-border: #e5e7eb;
-  --semrush-text: #111111;
-  --semrush-text-muted: #4b5563;
-
-  /* Tailwind semantic tokens (default = light) */
-  --background: var(--semrush-bg);
-  --foreground: var(--semrush-text);
-  --card: var(--semrush-surface);
-  --card-foreground: var(--semrush-text);
-  --primary: var(--semrush-primary);
-  --primary-foreground: #ffffff;
-  --muted: #f3f4f6;
-  --muted-foreground: var(--semrush-text-muted);
-  --border: var(--semrush-border);
-  --ring: var(--semrush-primary);
-}
-
-.dark {
-  /* SEMrush-inspired premium dark palette */
-  --semrush-bg: #111111;
-  --semrush-surface: #1f1f1f;
-  --semrush-border: #2a2a2a;
-  --semrush-text: #ffffff;
-  --semrush-text-muted: #b3b3b3;
-
-  --background: var(--semrush-bg);
-  --foreground: var(--semrush-text);
-  --card: var(--semrush-surface);
-  --card-foreground: var(--semrush-text);
-  --primary: var(--semrush-primary);
-  --primary-foreground: #111111;
-  --muted: #1a1a1a;
-  --muted-foreground: var(--semrush-text-muted);
-  --border: var(--semrush-border);
-  --ring: var(--semrush-primary);
-
-  color-scheme: dark;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-html {
-  scroll-behavior: smooth;
+  --background: #0B0F1A;
+  --foreground: #F8FAFC;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-foreground: #F8FAFC;
+  --popover: #0B0F1A;
+  --popover-foreground: #F8FAFC;
+  --primary: #7C0181;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1A1040;
+  --secondary-foreground: #F8FAFC;
+  --muted: rgba(255, 255, 255, 0.08);
+  --muted-foreground: #94A3B8;
+  --accent: #FC01B4;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #F8FAFC;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #7C0181;
+  --radius: 0.75rem;
 }
 
 body {
-  min-height: 100vh;
-  background: var(--background);
+  background: radial-gradient(circle at top left, #7C0181 0%, #0B0F1A 45%, #FC01B4 100%);
   color: var(--foreground);
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
 }
 
+/* Glassmorphism Utilities */
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
+
+  .glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  }
+
+  .cosmic-mesh {
+    background-image:
+      radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+  }
+}
+
+/* Recharts Customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05);
+}
+
+.recharts-text {
+  fill: #94A3B8 !important;
+  font-size: 12px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0F1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7C0181;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FC01B4;
 }

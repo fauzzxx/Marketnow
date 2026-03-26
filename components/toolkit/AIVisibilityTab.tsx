@@ -13,12 +13,14 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-const CHART_COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#c084fc"];
+const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED"];
 
 export default function AIVisibilityTab() {
   const [brandName, setBrandName] = useState("");
@@ -52,136 +54,185 @@ export default function AIVisibilityTab() {
 
   const scoreBarData = result
     ? [
-        { name: "Google", score: result.google_score, fill: CHART_COLORS[0] },
-        { name: "AI", score: result.ai_score, fill: CHART_COLORS[1] },
-        { name: "Final", score: result.final_visibility_score, fill: CHART_COLORS[2] },
-      ]
+      { name: "Google", score: result.google_score, fill: CHART_COLORS[1] },
+      { name: "AI", score: result.ai_score, fill: CHART_COLORS[2] },
+      { name: "Final", score: result.final_visibility_score, fill: CHART_COLORS[0] },
+    ]
     : [];
 
   const scorePieData = result
     ? [
-        { name: "Google (60%)", value: result.google_score * 0.6, fill: CHART_COLORS[0] },
-        { name: "AI (40%)", value: result.ai_score * 0.4, fill: CHART_COLORS[1] },
-      ]
+      { name: "Google Score", value: result.google_score * 0.6, fill: CHART_COLORS[1] },
+      { name: "AI Score", value: result.ai_score * 0.4, fill: CHART_COLORS[2] },
+    ]
     : [];
 
   const positionBarData =
     result && result.brand_positions.length > 0
       ? result.brand_positions.map((pos, i) => ({
-          name: `#${pos}`,
-          position: pos,
-          fill: CHART_COLORS[i % CHART_COLORS.length],
-        }))
+        name: `#${pos}`,
+        position: 13 - pos, // 1st Rank = 12 Strength
+        realPosition: pos,
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      }))
       : [];
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">AI Visibility Tracker</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
+    <div className="space-y-10">
+      <div className="grid gap-8 sm:grid-cols-2 bg-white p-8 rounded-[2rem] border border-slate-200 backdrop-blur-md">
+        <Input theme="light"
           label="Brand Name"
           value={brandName}
           onChange={(e) => setBrandName(e.target.value)}
-          placeholder="Your brand"
+          placeholder="yourbrand.com"
           disabled={loading}
+          className="bg-transparent"
         />
-        <Input
+        <Input theme="light"
           label="Target Keyword"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="e.g. best CRM software"
+          placeholder="e.g. best organic soda"
           disabled={loading}
+          className="bg-transparent"
         />
       </div>
-      <Button onClick={handleAnalyze} loading={loading}>
-        Analyze Visibility
-      </Button>
+      <div className="flex justify-center">
+        <Button variant="dashboard" onClick={handleAnalyze} loading={loading} size="lg" className="px-12 rounded-2xl shadow-2xl shadow-purple-500/20">
+          Run Deep Visibility Scan
+        </Button>
+      </div>
 
       {result && (
-        <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-          <h3 className="font-semibold text-card-foreground">Google Search Analysis</h3>
-          {result.brand_positions.length > 0 ? (
-            <>
-              <p className="text-green-600 dark:text-green-400 mb-2">
-                Brand found in positions: {result.brand_positions.join(", ")}
-              </p>
-              {positionBarData.length > 0 && (
-                <div className="h-32 w-full max-w-xs">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={positionBarData} layout="vertical" margin={{ left: 24, right: 8 }}>
-                      <XAxis type="number" domain={[0, 10]} tick={{ fill: "currentColor", fontSize: 12 }} />
-                      <YAxis type="category" dataKey="name" width={36} tick={{ fill: "currentColor", fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                      <Bar dataKey="position" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-10"
+        >
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Google Results */}
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-1 items-center overflow-hidden">
+              <div className="p-8">
+                <h3 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 mb-6">Google Search Matrix</h3>
+                {result.brand_positions.length > 0 ? (
+                  <div className="space-y-6">
+                    <div className="flex flex-wrap gap-2">
+                      {result.brand_positions.map((pos, i) => (
+                        <div key={i} className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-3 py-1.5 rounded-lg text-xs font-black">
+                          Rank #{pos}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={positionBarData} layout="vertical" margin={{ left: 0, right: 30 }}>
+                          <XAxis type="number" domain={[0, 12]} hide />
+                          <YAxis type="category" dataKey="name" width={40} tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                            contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }}
+                            labelStyle={{ fontWeight: 900, color: '#EC4899' }}
+                          />
+                          <Bar dataKey="position" radius={[0, 10, 10, 0]} barSize={20}>
+                            {positionBarData.map((entry, index) => (
+                              <Cell key={index} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8 rounded-2xl bg-red-500/10 border border-red-500/20 text-center">
+                    <p className="text-red-400 font-bold uppercase tracking-widest text-xs">Brand Invisiblity Detected in Top 10</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Preview */}
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+              <h3 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 mb-6">Gemini Intelligence Sync</h3>
+              <div className="p-6 rounded-2xl bg-white border border-slate-100 space-y-6">
+                <p className="text-sm text-slate-500 leading-relaxed italic">&quot;{result.ai_response_preview}&quot;</p>
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">AI Mention Status</span>
+                  {result.ai_score === 100 ? (
+                    <span className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">Mentioned</span>
+                  ) : (
+                    <span className="bg-red-50 text-red-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100">Not Found</span>
+                  )}
                 </div>
-              )}
-            </>
-          ) : (
-            <p className="text-red-500">Brand not found in top Google results.</p>
-          )}
-
-          <h3 className="font-semibold text-card-foreground">Gemini AI Visibility</h3>
-          <p className="text-sm text-muted-foreground">{result.ai_response_preview}</p>
-          {result.ai_score === 100 ? (
-            <p className="text-green-600 dark:text-green-400">Brand mentioned in AI response.</p>
-          ) : (
-            <p className="text-red-500">Brand not mentioned in AI response.</p>
-          )}
-
-          <h3 className="font-semibold text-card-foreground">Score breakdown</h3>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scoreBarData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                  <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
-                  <YAxis domain={[0, 100]} tick={{ fill: "currentColor", fontSize: 12 }} />
-                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                  <Bar dataKey="score" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={scorePieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={64}
-                    paddingAngle={2}
-                    label={({ name, value }) => `${name}: ${value.toFixed(0)}`}
-                  >
-                    {scorePieData.map((_, i) => (
-                      <Cell key={i} fill={scorePieData[i].fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              </div>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs text-muted-foreground">Google Visibility</p>
-              <p className="text-2xl font-bold text-card-foreground">{result.google_score}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs text-muted-foreground">AI Visibility</p>
-              <p className="text-2xl font-bold text-card-foreground">{result.ai_score}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs text-muted-foreground">Final Score</p>
-              <p className="text-2xl font-bold text-primary">{result.final_visibility_score}</p>
+
+          {/* Scores */}
+          <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 items-center overflow-hidden">
+            <h3 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 mb-10 text-center">Visibility Score Optimization</h3>
+            <div className="grid gap-12 lg:grid-cols-2 items-center">
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={scoreBarData} margin={{ top: 0, bottom: 0 }}>
+                    <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 12]} hide />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }}
+                    />
+                    <Bar dataKey="score" radius={[12, 12, 0, 0]} barSize={40}>
+                      {scoreBarData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-64 relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={scorePieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      stroke="none"
+                    >
+                      {scorePieData.map((_, i) => (
+                        <Cell key={i} fill={scorePieData[i].fill} className="filter drop-shadow-[0_0_10px_rgba(0,0,0,0.3)]" />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }} />
+                    <Legend verticalAlign="bottom" height={36} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                  <span className="text-3xl font-black text-slate-800">{result.final_visibility_score}</span>
+                  <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">/ 12 Score</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            {[
+              { label: "Google Score", val: result.google_score, color: "text-ai-blue" },
+              { label: "AI Score", val: result.ai_score, color: "text-ai-purple" },
+              { label: "Final Visibility", val: result.final_visibility_score, color: "text-[#9333EA]" },
+            ].map(item => (
+              <div key={item.label} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 border border-slate-100 bg-white hover:bg-slate-50 transition-colors text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">{item.label}</p>
+                <p className={cn("text-4xl font-black font-sans", item.color)}>{item.val}<span className="text-lg opacity-40 ml-1">/12</span></p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       )}
     </div>
   );
 }
+

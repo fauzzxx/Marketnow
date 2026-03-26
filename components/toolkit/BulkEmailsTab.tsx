@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Mail, Send, FileSpreadsheet, Key, Type, Database, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
@@ -41,8 +44,16 @@ export default function BulkEmailsTab() {
         column,
         file,
       });
-      setResult(data);
-      toast(`Sent ${data.results.filter((r) => r.status === "sent").length} of ${data.total_emails} emails.`, "success");
+      const list = Array.isArray(data?.results) ? data.results : [];
+      const total = data?.total_emails ?? 0;
+      setResult({ total_emails: total, results: list });
+      const sent = list.filter((r) => r.status === "sent").length;
+      const failed = list.filter((r) => r.status === "failed").length;
+      if (total > 0 && list.length === 0) {
+        toast("No send results returned. Restart the backend and try again. If using Gmail, use an App Password (not your normal password).", "error");
+      } else {
+        toast(`Sent ${sent} of ${total} emails.${failed > 0 ? ` ${failed} failed.` : ""}`, sent === total ? "success" : "error");
+      }
     } catch (e) {
       toast(e instanceof Error ? e.message : "Send failed.", "error");
     } finally {
@@ -50,110 +61,170 @@ export default function BulkEmailsTab() {
     }
   };
 
-  const sentCount = result?.results.filter((r) => r.status === "sent").length ?? 0;
-  const failedCount = result?.results.filter((r) => r.status === "failed").length ?? 0;
+  const results: ResultItem[] = Array.isArray(result?.results) ? result.results : [];
+  const sentCount = results.filter((r) => r.status === "sent").length;
+  const failedCount = results.filter((r) => r.status === "failed").length;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">Bulk Emails</h2>
-      <p className="text-sm text-muted-foreground">
-        Send bulk emails using an Excel file. Use a Gmail account; the Excel file should have recipient emails in one column (set the column index below, 0-based).
-      </p>
+    <div className="space-y-10">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-10">
+        <div className="grid gap-8 sm:grid-cols-2">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Relay Identity (Gmail)</label>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-[#9333EA] transition-colors" />
+              <input
+                type="email"
+                className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="operator@nexus.com"
+                disabled={loading}
+              />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Access Cipher (App Password)</label>
+            <div className="relative group">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-ai-blue transition-colors" />
+              <input
+                type="password"
+                className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••••••"
+                disabled={loading}
+              />
+            </div>
+          </div>
+        </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)] space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Sender email (Gmail)</label>
-            <input
-              type="email"
-              className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={senderEmail}
-              onChange={(e) => setSenderEmail(e.target.value)}
-              placeholder="your@gmail.com"
-              disabled={loading}
-            />
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Broadcast Header</label>
+            <div className="relative group">
+              <Type className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-ai-purple transition-colors" />
+              <input
+                type="text"
+                className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Directive Alpha: Market Expansion"
+                disabled={loading}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">App password</label>
-            <input
-              type="password"
-              className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={loading}
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Subject</label>
-          <input
-            type="text"
-            className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Email subject"
-            disabled={loading}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Body</label>
-          <textarea
-            className="w-full min-h-[120px] rounded-xl border-2 border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Email body (plain text)"
-            disabled={loading}
-          />
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Excel file (emails in column)</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-xl file:border file:border-border file:bg-muted file:px-4 file:py-2 file:text-foreground"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              disabled={loading}
-            />
-          </div>
-          <div className="w-32">
-            <label className="block text-sm font-medium text-foreground mb-1.5">Column index</label>
-            <input
-              type="number"
-              min={0}
-              className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={column}
-              onChange={(e) => setColumn(Math.max(0, parseInt(e.target.value, 10) || 0))}
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Payload Content</label>
+            <textarea
+              className="w-full min-h-[200px] bg-slate-50/50 rounded-2xl border border-slate-200 p-6 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none leading-relaxed shadow-sm"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Enter your transmission payload..."
               disabled={loading}
             />
           </div>
         </div>
-        <Button onClick={handleSubmit} loading={loading}>
-          Send bulk emails
-        </Button>
+
+        <div className="grid gap-8 md:grid-cols-2 items-end">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Entity Matrix (Excel)</label>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={cn(
+                "bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center cursor-pointer hover:border-[#9333EA]/50 hover:bg-purple-50/30 transition-all group",
+                file && "border-[#9333EA]/50 bg-[#9333EA]/5"
+              )}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                disabled={loading}
+              />
+              <FileSpreadsheet className={cn("h-8 w-8 mx-auto mb-3 text-slate-800/20 group-hover:text-[#9333EA] transition-colors", file && "text-[#9333EA]")} />
+              <p className="text-sm font-bold text-slate-500">
+                {file ? file.name : "Target Spreadsheet"}
+              </p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-800/20 mt-1">
+                {file ? `${(file.size / 1024).toFixed(1)} KB Loaded` : "Drop .xlsx / .xls"}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Data Column Index</label>
+              <div className="relative group">
+                <Database className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-emerald-600 transition-colors" />
+                <input
+                  type="number"
+                  min={0}
+                  className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                  value={column}
+                  onChange={(e) => setColumn(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+            <Button variant="dashboard" onClick={handleSubmit} loading={loading} className="w-full py-5 rounded-2xl group text-sm">
+              <Send className="h-4 w-4 mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              Initialize Global Broadcast
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {result && (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-          <h3 className="mb-2 text-sm font-semibold text-card-foreground">Results</h3>
-          <p className="text-sm text-muted-foreground mb-3">
-            {result.total_emails} total · {sentCount} sent · {failedCount} failed
-          </p>
-          <ul className="max-h-64 overflow-y-auto space-y-1 text-sm">
-            {result.results.map((r, i) => (
-              <li key={i} className="flex items-center gap-2">
-                <span className={r.status === "sent" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                  {r.status === "sent" ? "✓" : "✗"}
-                </span>
-                <span className="text-card-foreground truncate">{r.email}</span>
-                {r.error && <span className="text-muted-foreground truncate" title={r.error}>{r.error}</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <div className="grid gap-6 sm:grid-cols-3">
+              {[
+                { label: "Total Entities", val: result.total_emails, color: "text-slate-500", icon: Database },
+                { label: "Successful Relays", val: sentCount, color: "text-emerald-600", icon: CheckCircle2 },
+                { label: "Failed Transmissions", val: failedCount, color: "text-red-500", icon: XCircle },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</p>
+                    <p className={cn("text-3xl font-black font-sans tabular-nums", stat.color)}>{stat.val}</p>
+                  </div>
+                  <stat.icon className={cn("h-8 w-8 opacity-10", stat.color)} />
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8">Detailed Signal Log</h3>
+              <div className="max-h-80 overflow-y-auto custom-scrollbar space-y-3">
+                {results.map((r, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 group hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      {r.status === "sent" ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className="text-sm font-bold text-slate-600">{r.email}</span>
+                    </div>
+                    {r.error && (
+                      <span className="text-[10px] font-mono text-red-400/60 uppercase" title={r.error}>
+                        {r.error.split(":").pop()?.trim() || "Encryption Error"}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

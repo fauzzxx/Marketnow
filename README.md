@@ -92,6 +92,64 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Use **Sign up** to create an account and **Log in** to access the dashboard.
 
+## One-command run (frontend + backend)
+
+This project uses a **Next.js frontend** and an embedded **Python backend** located at `login/backend`.
+
+### Required installs
+
+- Node.js (for the frontend)
+- Python 3.10+ (for the backend)
+
+Install frontend deps (from `login/`):
+
+```bash
+npm install
+```
+
+Install backend deps (from `login/backend/`):
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Create backend env file:
+
+- Copy `login/backend/.env.example` → `login/backend/.env`
+- Set `SEARCHAPI_KEY`, `GROQ_API_KEY`, `CLAUDE_API_KEY`, etc.
+
+### Dev (one command)
+
+From `login/`:
+
+```bash
+npm run dev:all
+```
+
+This starts:
+- Next.js on `http://localhost:3000`
+- Flask API on `http://127.0.0.1:5001`
+
+### Production (one command)
+
+On Linux servers (recommended):
+
+1) Build Next:
+
+```bash
+npm run build
+```
+
+2) Start both:
+
+```bash
+npm run start:all
+```
+
+Backend uses **gunicorn** in production mode (Windows falls back to `python server3.py`).
+
 ## Routes
 
 | Route       | Access        | Description                    |

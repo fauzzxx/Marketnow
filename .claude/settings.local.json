@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find 'C:/Projects/New folder/login' -maxdepth 1 -name next.config.* -o -name tailwind.config.* -o -name .cursorrules -o -name README.md)",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

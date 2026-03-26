@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Swords, ExternalLink, Activity } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-const CHART_COLORS = ["#6366f1", "#8b5cf6", "#22c55e", "#eab308"];
+const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED"];
 
 type CompareResult = {
   keywords_used: string[];
@@ -45,113 +48,153 @@ export default function CompetitorTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">Competitor Analysis</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          label="Domain 1 (e.g. example.com)"
-          value={domain1}
-          onChange={(e) => setDomain1(e.target.value)}
-          placeholder="company1.com"
-          disabled={loading}
-        />
-        <Input
-          label="Domain 2 (e.g. competitor.com)"
-          value={domain2}
-          onChange={(e) => setDomain2(e.target.value)}
-          placeholder="company2.com"
-          disabled={loading}
-        />
-      </div>
-      <Input
-        label="Query / seed keyword (e.g. best CRM software)"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Keyword to compare rankings for"
-        disabled={loading}
-      />
-      <Button onClick={handleCompare} loading={loading}>
-        Compare domains
-      </Button>
-
-      {compareResult && (
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-            <h3 className="mb-3 font-semibold text-card-foreground">Position comparison (lower is better)</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={compareResult.keyword_comparison.map((row) => ({
-                    name: row.keyword.length > 12 ? row.keyword.slice(0, 10) + "…" : row.keyword,
-                    fullName: row.keyword,
-                    company1: row.company1_position ?? 0,
-                    company2: row.company2_position ?? 0,
-                  }))}
-                  margin={{ top: 8, right: 8, left: 8, bottom: 24 }}
-                >
-                  <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 11 }} angle={-45} textAnchor="end" height={48} />
-                  <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
-                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                  <Legend />
-                  <Bar dataKey="company1" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} name={compareResult.summary.domain1.domain} />
-                  <Bar dataKey="company2" fill={CHART_COLORS[1]} radius={[4, 4, 0, 0]} name={compareResult.summary.domain2.domain} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-          <section className="rounded-2xl border border-border bg-card shadow-[0_16px_40px_rgba(0,0,0,0.35)] overflow-x-auto">
-            <h3 className="mb-2 p-4 font-semibold text-card-foreground">Keyword comparison</h3>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="p-3 text-left font-medium">Keyword</th>
-                  <th className="p-3 text-left font-medium">{compareResult.summary.domain1.domain} position</th>
-                  <th className="p-3 text-left font-medium">{compareResult.summary.domain2.domain} position</th>
-                </tr>
-              </thead>
-              <tbody>
-                {compareResult.keyword_comparison.map((row, i) => (
-                  <tr key={i} className="border-b border-border/50 transition-colors hover:bg-background/30">
-                    <td className="p-3">{row.keyword}</td>
-                    <td className="p-3">{row.company1_position ?? "—"}</td>
-                    <td className="p-3">{row.company2_position ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-              <h3 className="mb-2 font-semibold text-card-foreground">{compareResult.summary.domain1.domain}</h3>
-              <p className="text-sm text-muted-foreground">Indexed pages: <strong className="text-foreground">{compareResult.summary.domain1.indexed_pages.toLocaleString()}</strong></p>
-              {compareResult.summary.domain1.top_pages?.length > 0 && (
-                <div className="mt-3">
-                  <p className="mb-1 text-xs font-medium text-muted-foreground">Top pages</p>
-                  <ul className="space-y-1 text-xs">
-                    {compareResult.summary.domain1.top_pages.slice(0, 5).map((p, i) => (
-                      <li key={i} className="truncate" title={p.url}>{p.title || p.url}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-              <h3 className="mb-2 font-semibold text-card-foreground">{compareResult.summary.domain2.domain}</h3>
-              <p className="text-sm text-muted-foreground">Indexed pages: <strong className="text-foreground">{compareResult.summary.domain2.indexed_pages.toLocaleString()}</strong></p>
-              {compareResult.summary.domain2.top_pages?.length > 0 && (
-                <div className="mt-3">
-                  <p className="mb-1 text-xs font-medium text-muted-foreground">Top pages</p>
-                  <ul className="space-y-1 text-xs">
-                    {compareResult.summary.domain2.top_pages.slice(0, 5).map((p, i) => (
-                      <li key={i} className="truncate" title={p.url}>{p.title || p.url}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-          </div>
+    <div className="space-y-10">
+      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+        <div className="grid gap-8 sm:grid-cols-2">
+          <Input theme="light"
+            label="Your Vector (Domain 1)"
+            value={domain1}
+            onChange={(e) => setDomain1(e.target.value)}
+            placeholder="e.g. apple.com"
+            disabled={loading}
+          />
+          <Input theme="light"
+            label="Target Rival (Domain 2)"
+            value={domain2}
+            onChange={(e) => setDomain2(e.target.value)}
+            placeholder="e.g. samsung.com"
+            disabled={loading}
+          />
         </div>
-      )}
+        <div className="flex flex-col md:flex-row gap-6 items-end">
+          <div className="flex-1">
+            <Input theme="light"
+              label="Comparison Matrix (Query)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. best smartphone cameras"
+              disabled={loading}
+            />
+          </div>
+          <Button variant="dashboard" onClick={handleCompare} loading={loading} className="px-12 rounded-2xl group">
+            <Swords className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform" />
+            Initialize Conflict Analysis
+          </Button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {compareResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10"
+          >
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+              <div className="flex items-center gap-3 mb-10">
+                <Activity className="h-5 w-5 text-ai-blue" />
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Rank Displacement Analysis</h4>
+              </div>
+              <div style={{ height: Math.max(400, 320 + (compareResult.graph_data.labels.reduce((m, l) => Math.max(m, l.length), 0)) * 3) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={compareResult.graph_data.labels.map((label, idx) => ({
+                      name: label,
+                      company1: compareResult.graph_data.company1[idx],
+                      company2: compareResult.graph_data.company2[idx],
+                    }))}
+                    margin={{ top: 20, right: 20, bottom: 120, left: 0 }}
+                  >
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                      angle={-40}
+                      textAnchor="end"
+                      interval={0}
+                      height={120}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis domain={[0, 12]} ticks={[0, 3, 6, 9, 12]} tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b", maxWidth: 350 }}
+                      labelStyle={{ fontWeight: 700, fontSize: 12, marginBottom: 4, whiteSpace: "normal", wordBreak: "break-word" }}
+                      formatter={(v: any) => [v + " / 12", "Market Strength"]}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar dataKey="company1" fill={CHART_COLORS[0]} radius={[8, 8, 0, 0]} name={compareResult.summary.domain1.domain} barSize={32} />
+                    <Bar dataKey="company2" fill={CHART_COLORS[1]} radius={[8, 8, 0, 0]} name={compareResult.summary.domain2.domain} barSize={32} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              {[
+                { data: compareResult.summary.domain1, color: "text-[#9333EA]" },
+                { data: compareResult.summary.domain2, color: "text-ai-blue" }
+              ].map((rival, idx) => (
+                <div key={idx} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 border border-slate-100 flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <h4 className={cn("text-2xl font-black font-sans truncate max-w-[200px]", rival.color)}>
+                        {rival.data.domain}
+                      </h4>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Vector Profile</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-black font-sans tabular-nums">{rival.data.indexed_pages.toLocaleString()}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Pages</p>
+                    </div>
+                  </div>
+
+                  {rival.data.top_pages?.length > 0 && (
+                    <div className="space-y-4 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-ai-purple">Core Assets</p>
+                      <div className="space-y-2">
+                        {rival.data.top_pages.slice(0, 4).map((p, i) => (
+                          <div key={i} className="group flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 hover:bg-slate-50 transition-colors">
+                            <span className="text-sm font-bold truncate max-w-[250px]" title={p.url}>{p.title || p.url}</span>
+                            <ExternalLink className="h-3 w-3 text-slate-800/20 group-hover:text-white transition-colors flex-shrink-0 ml-2" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-white border-b border-slate-200 font-sans uppercase tracking-widest text-[10px] text-slate-500">
+                    <th className="p-6 text-left">Target Pulse</th>
+                    <th className="p-6 text-left">{compareResult.summary.domain1.domain}</th>
+                    <th className="p-6 text-left">{compareResult.summary.domain2.domain}</th>
+                    <th className="p-6 text-left">Differential</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-600">
+                  {compareResult.keyword_comparison.map((row, i) => {
+                    const diff = (row.company1_position || 100) - (row.company2_position || 100);
+                    return (
+                      <tr key={i} className="border-b border-slate-100 group hover:bg-white transition-colors">
+                        <td className="p-6 font-bold">{row.keyword}</td>
+                        <td className="p-6 font-black tabular-nums text-[#9333EA]">{row.company1_position ?? "—"}</td>
+                        <td className="p-6 font-black tabular-nums text-ai-blue">{row.company2_position ?? "—"}</td>
+                        <td className="p-6 font-black tabular-nums">
+                          {diff === 0 ? "0" : diff < 0 ? <span className="text-emerald-600">{diff}</span> : <span className="text-red-500">+{diff}</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

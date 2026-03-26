@@ -24,8 +24,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
 .env
+.env*.local
+backend/.env
 
 # vercel
 .vercel
@@ -33,3 +34,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+backend/venv/
+.linkedin-profile/
+backend/.linkedin-profile/
+
+# IDE
+.vscode/
+.idea/
+
+# temp/build artifacts
+*.xlsx
+*.pdf
+*.docx
+lint*.txt
+tsc_output*.txt
+out.txt
+chrome-win64/
+chromedriver-win64/

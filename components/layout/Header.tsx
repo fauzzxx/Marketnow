@@ -4,12 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, Rocket, LayoutDashboard, LogOut, User, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import { getAvatarPlaceholder, getInitials } from "@/utils/avatar";
 import { toast } from "@/utils/toast";
 import { useDashboardSidebar } from "@/contexts/DashboardSidebarContext";
 import ThemeToggle from "./ThemeToggle";
+import Button from "@/components/ui/Button";
 
 interface HeaderProps {
   showAuth?: boolean;
@@ -21,6 +24,7 @@ export default function Header({ showAuth = true }: HeaderProps) {
   const { user, loading } = useUser();
   const sidebarContext = useDashboardSidebar();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isDashboard = pathname?.startsWith("/dashboard");
@@ -38,117 +42,159 @@ export default function Header({ showAuth = true }: HeaderProps) {
   const handleLogout = async () => {
     setUserMenuOpen(false);
     const supabase = createClient();
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     toast("Logged out successfully.", "success");
     router.push("/");
     router.refresh();
   };
 
-  return (
-    <header
-      className={`sticky top-0 z-40 w-full border-b backdrop-blur-md ${
-        isDashboard ? "border-border bg-background/90" : "border-border/50 bg-background/80"
-      }`}
-    >
-      <div className="flex h-16 w-full items-center justify-between px-2 sm:px-3">
-        {/* Extreme left: hamburger + MARKET NOW (no gap at corner) */}
-        <div className="flex shrink-0 items-center gap-2">
-          {isDashboard && sidebarContext && (
-            <button
-              type="button"
-              onClick={() => sidebarContext.setSidebarOpen((o) => !o)}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-xl p-2 text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
-              aria-label={sidebarContext.sidebarOpen ? "Close menu" : "Open menu"}
-            >
-              <span className="block h-0.5 w-5 rounded-full bg-current" />
-              <span className="block h-0.5 w-5 rounded-full bg-current" />
-              <span className="block h-0.5 w-5 rounded-full bg-current" />
-            </button>
-          )}
-          <Link
-            href="/"
-            className="flex items-center gap-2 transition-opacity hover:opacity-80"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-black/30">
-              MN
+  // Conditionally render the new light-mode public header if NOT in dashboard
+  if (!isDashboard) {
+    return (
+      <header className="fixed top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all">
+        <div className="w-full px-4 md:px-6 flex h-[72px] items-center justify-between">
+          <div className="flex items-center gap-12">
+            <Link href="/" className="flex items-center gap-2 group">
+              <span className="text-2xl font-bold tracking-tight text-[#1A1625] leading-none flex items-center">
+                Market<span className="text-[#EC4899]">NOW</span>
+              </span>
+            </Link>
+
+            <div className="hidden lg:flex items-center gap-8">
+              {[
+                { label: "Home", href: "/" },
+                { label: "Services", href: "/services" },
+                { label: "Features", href: "/#features" },
+                { label: "SEO Tools", href: "/seo-tools" },
+                { label: "Keyword Tools", href: "/keyword-tools" },
+                { label: "GEO (AI) Tools", href: "/geo-tools" },
+                { label: "Pricing", href: "/services" },
+              ].map((item) => {
+                const hasDropdown = ["Features", "SEO Tools", "Keyword Tools", "GEO (AI) Tools"].includes(item.label);
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="flex items-center gap-1 text-[15px] font-medium text-slate-600 hover:text-[#9333EA] transition-colors"
+                  >
+                    {item.label}
+                    {hasDropdown && <ChevronDown className="h-3.5 w-3.5 opacity-60" />}
+                  </Link>
+                );
+              })}
             </div>
-            <span className="text-lg font-bold tracking-tight text-foreground">
-              MARKET NOW
-            </span>
-          </Link>
-        </div>
-        {/* Extreme right: Light/Dark/System + Dashboard + profile (no gap at corner) */}
-        <div className="flex shrink-0 items-center gap-2">
-          <ThemeToggle />
-          {showAuth && (
-            <>
-              {loading ? (
-                <div className="h-10 w-10 shrink-0 rounded-full bg-muted animate-pulse" />
-              ) : user ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/dashboard"
-                    className="hidden rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/80 sm:block"
-                  >
-                    Dashboard
-                  </Link>
-                  <div className="relative shrink-0" ref={menuRef}>
-                    <button
-                      type="button"
-                      onClick={() => setUserMenuOpen((o) => !o)}
-                      className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white shadow-md ring-2 ring-border/50 transition-transform hover:ring-primary/50 active:scale-95 ${getAvatarPlaceholder(user.email ?? "")}`}
-                      aria-expanded={userMenuOpen}
-                      aria-haspopup="true"
+          </div>
+
+          <div className="flex items-center gap-4">
+            {showAuth && (
+              <div className="flex items-center gap-3">
+                {loading ? (
+                  <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                ) : user ? (
+                  <div className="flex items-center gap-3">
+                    <Link href="/dashboard" className="hidden sm:block">
+                      <button className="px-5 py-2 rounded-full font-semibold text-sm text-[#9333EA] bg-purple-50 hover:bg-purple-100 transition-colors">
+                        Dashboard
+                      </button>
+                    </Link>
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 shadow-sm overflow-hidden bg-white text-slate-700`}
+                      title={user.email ?? ""}
                     >
-                      {getInitials(user.email ?? "")}
+                      <span className="text-xs font-bold">{getInitials(user.email ?? "")}</span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="hidden sm:flex items-center gap-2 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium"
+                    >
+                      Log Out
                     </button>
-                    {userMenuOpen && (
-                      <div
-                        className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-card py-2 shadow-xl"
-                        role="menu"
-                      >
-                        <div className="border-b border-border px-4 py-3">
-                          <p className="truncate text-sm font-medium text-card-foreground">
-                            {user.email}
-                          </p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            Account
-                          </p>
-                        </div>
-                        <div className="p-2">
-                          <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/10"
-                            role="menuitem"
-                          >
-                            Log out
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/login"
-                    className="rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/80"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="rounded-xl bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-opacity hover:opacity-90"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
-            </>
-          )}
+                ) : (
+                  <div className="hidden items-center gap-3 sm:flex">
+                    <Link href="/login">
+                      <button className="px-5 py-2.5 rounded-full font-semibold text-sm text-slate-700 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-all">
+                        Login
+                      </button>
+                    </Link>
+                    <Link href="/signup">
+                      <button className="px-5 py-2.5 rounded-full font-semibold text-sm text-white bg-gradient-to-r from-[#EC4899] to-[#9333EA] shadow-md hover:shadow-lg hover:opacity-90 transition-all">
+                        Sign Up
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <AnimatePresence mode="wait">
+                {mobileMenuOpen ? <X className="h-6 w-6" key="x" /> : <Menu className="h-6 w-6" key="menu" />}
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
-  );
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden border-t border-slate-100 p-6 space-y-2 bg-white"
+            >
+              {[
+                { label: "Home", href: "/" },
+                { label: "Services", href: "/services" },
+                { label: "Features", href: "/#features" },
+                { label: "SEO Tools", href: "/seo-tools" },
+                { label: "Keyword Tools", href: "/keyword-tools" },
+                { label: "GEO (AI) Tools", href: "/geo-tools" },
+                { label: "Pricing", href: "/services" },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="block px-4 py-3 text-sm font-semibold text-slate-600 hover:text-[#9333EA] hover:bg-slate-50 rounded-lg transition-all"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="pt-6 border-t border-slate-100 flex flex-col gap-3">
+                {user ? (
+                  <>
+                    <Link href="/dashboard" className="w-full">
+                      <button className="w-full py-3 rounded-full font-semibold text-sm text-[#9333EA] bg-purple-50">Dashboard</button>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full py-3 rounded-full font-semibold text-sm text-slate-600 hover:bg-slate-50"
+                    >
+                      Log Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="w-full">
+                      <button className="w-full py-3 rounded-full font-semibold text-sm text-slate-700 bg-white border border-slate-200">Login</button>
+                    </Link>
+                    <Link href="/signup" className="w-full">
+                      <button className="w-full py-3 rounded-full font-semibold text-sm text-white bg-gradient-to-r from-[#EC4899] to-[#9333EA]">Sign Up</button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+    );
+  }
+
+  // Nullify Dashboard Header since DashboardClient handles its own layout
+  return null;
 }
+

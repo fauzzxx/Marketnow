@@ -100,6 +100,7 @@ export default function Toast() {
     <div
       className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full animate-fade-in"
       aria-live="polite"
+      data-toast-root="true"
     >
       {toasts.map((t) => (
         <ToastItemComponent key={t.id} t={t} />

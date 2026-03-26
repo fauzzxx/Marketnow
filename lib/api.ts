@@ -1,14 +1,15 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-const API_TIMEOUT_MS = 90_000; // 90s for slow SerpAPI/keyword loops
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:5001";
+const API_TIMEOUT_MS = 300_000; // 5 min default; long for keyword/SerpAPI and browser automation
 
 async function request<T>(
   endpoint: string,
-  options: RequestInit & { body?: object } = {}
+  options: Omit<RequestInit, "body"> & { body?: any; timeoutMs?: number } = {}
 ): Promise<T> {
-  const { body, ...rest } = options;
+  const { body, timeoutMs, ...rest } = options;
   const url = `${API_BASE}${endpoint}`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timeout = timeoutMs ?? API_TIMEOUT_MS;
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
     const res = await fetch(url, {
@@ -31,11 +32,11 @@ async function request<T>(
     clearTimeout(timeoutId);
     if (err instanceof Error) {
       if (err.name === "AbortError") {
-        throw new Error("Request timed out. The API may be slow (e.g. many keyword lookups). Try again.");
+        throw new Error("Request timed out. The API may be slow (keyword lookups, LinkedIn automation). Try again.");
       }
-      if (err.message === "Failed to fetch" || err.message.includes("Load failed")) {
+      if (err.message === "Failed to fetch" || err.message.includes("Load failed") || err.message.includes("NetworkError")) {
         throw new Error(
-          "Cannot reach the API. Ensure the Flask server is running (python server.py on port 5001) and CORS is allowed."
+          `Cannot reach the API at ${url}. Open ${API_BASE}/api/health in your browser — if it fails, start backend: cd marketnow_backend && python server3.py`
         );
       }
       throw err;
@@ -134,10 +135,10 @@ export const api = {
       ),
   },
   advanced: {
-    siteAudit: (url: string) =>
+    siteAudit: (url: string, js?: boolean) =>
       request<{ title: string; meta_description: string }>("/api/advanced/site-audit", {
         method: "POST",
-        body: { url },
+        body: { url, ...(js ? { js: true } : {}) },
       }),
     onpage: (url: string, keyword: string) =>
       request<{ keyword_count: number }>("/api/advanced/onpage", { method: "POST", body: { url, keyword } }),
@@ -178,6 +179,7 @@ export const api = {
           password: params.password,
           post: params.post.trim(),
         },
+        timeoutMs: 360_000, // 6 min for browser automation (login + LinkedIn + post)
       }),
   },
 

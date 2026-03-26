@@ -10,6 +10,10 @@ export function useUser() {
 
   useEffect(() => {
     const supabase = createClient();
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
 
     const {
       data: { subscription },

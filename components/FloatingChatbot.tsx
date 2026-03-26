@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageSquare, X, Send, Sparkles, Bot } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
+import { cn } from "@/lib/utils";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -17,8 +20,24 @@ export default function FloatingChatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (open) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [messages, open]);
+
+  // Initial greeting
+  useEffect(() => {
+    if (open && messages.length === 0) {
+      setMessages([
+        {
+          role: "assistant",
+          text: "Hello! I'm your AI SEO Copilot. I can help you with SEO analysis, GEO optimization, and provide recommendations. How can I assist you today?"
+        }
+      ]);
+    }
+  }, [open, messages.length]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -33,7 +52,7 @@ export default function FloatingChatbot() {
       const reply = typeof data.reply === "string" ? data.reply : JSON.stringify(data.reply);
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch (e) {
-      const errMsg = e instanceof Error ? e.message : "Chatbot request failed.";
+      const errMsg = e instanceof Error ? e.message : "Request failed.";
       toast(errMsg, "error");
       setMessages((prev) => [...prev, { role: "assistant", text: `Error: ${errMsg}` }]);
     } finally {
@@ -49,92 +68,115 @@ export default function FloatingChatbot() {
   };
 
   return (
-    <>
-      {/* Floating button - bottom right */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        aria-label={open ? "Close assistant" : "Open assistant"}
-      >
-        {open ? (
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-        )}
-      </button>
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="mb-4 w-[380px] max-w-[calc(100vw-2rem)] h-[550px] max-h-[calc(100vh-8rem)] flex flex-col rounded-[22px] bg-white shadow-2xl border border-slate-100 overflow-hidden transform-gpu origin-bottom-right"
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#EC4899] to-[#9333EA] px-5 py-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5 text-white">
+                <Bot className="h-5 w-5" />
+                <h3 className="font-bold text-lg leading-none tracking-wide mt-0.5">AI SEO Copilot</h3>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-white/80 hover:text-white transition-colors"
+                aria-label="Close Chat"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-      {/* Chat panel */}
-      {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex w-[380px] max-w-[calc(100vw-3rem)] flex-col rounded-2xl border border-border bg-card shadow-xl">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <span className="text-sm font-semibold text-foreground">Assistant</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Close"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex max-h-[320px] min-h-[200px] flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-              {messages.length === 0 && (
-                <p className="text-muted-foreground text-xs">Ask about keywords, PPC, competitors, content ideas, and more.</p>
-              )}
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-5 pb-2 border-b border-slate-100 bg-white custom-scrollbar flex flex-col">
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div key={i} className={cn("flex mb-5 last:mb-0", msg.role === "user" ? "justify-end" : "justify-start")}>
+                  {msg.role === "assistant" && (
+                    <div className="h-8 w-8 rounded-full bg-[#AC46D8] flex items-center justify-center shrink-0 mr-3 shadow-[0_2px_10px_rgb(172,70,216,0.2)]">
+                      <Bot className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                   <div
-                    className={`max-w-[90%] rounded-xl px-3 py-2 text-sm ${
+                    className={cn(
+                      "px-4 py-3 text-[14.5px] leading-relaxed relative max-w-[85%]",
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground border border-border"
-                    }`}
+                        ? "bg-[#F3F4F6] text-slate-800 rounded-2xl rounded-tr-[4px] shadow-sm ml-auto"
+                        : "bg-white border border-pink-100 rounded-2xl rounded-tl-[4px] shadow-sm text-slate-700"
+                    )}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    {msg.role === "assistant" && i === 0 && (
+                      <p className="text-[11px] text-slate-400 mt-2 block">01:31 am</p>
+                    )}
                   </div>
                 </div>
               ))}
+
               {loading && (
-                <div className="flex justify-start">
-                  <div className="rounded-xl bg-muted border border-border px-3 py-2 text-xs text-muted-foreground">
-                    Thinking...
+                <div className="flex items-start justify-start mb-5">
+                  <div className="h-8 w-8 rounded-full bg-[#AC46D8] flex items-center justify-center shrink-0 mr-3 shadow-sm">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="bg-white border border-pink-100 rounded-2xl rounded-tl-[4px] px-4 py-3 shadow-sm flex items-center gap-[5px] h-[46px]">
+                    <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-1" />
             </div>
-            <div className="border-t border-border p-3">
-              <div className="flex gap-2">
+
+            {/* InputArea */}
+            <div className="p-4 bg-white shrink-0">
+              <div className="flex items-center gap-2 mb-2">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask a question..."
-                  className="min-h-[40px] max-h-24 flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  placeholder="Ask me anything about SEO..."
+                  className="flex-1 border border-pink-200 rounded-[12px] py-[13px] px-4 text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-pink-300 resize-none h-[48px] custom-scrollbar overflow-hidden leading-tight bg-white"
                   disabled={loading}
-                  rows={1}
                 />
                 <button
-                  type="button"
                   onClick={handleSend}
                   disabled={loading || !input.trim()}
-                  className="shrink-0 self-end rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+                  className="h-[48px] w-[54px] shrink-0 flex items-center justify-center rounded-[12px] bg-[#D692E6] text-white shadow-sm hover:bg-[#C97FE0] disabled:opacity-50 transition-colors"
                 >
-                  Send
+                  <Send className="h-[22px] w-[22px]" strokeWidth={1.5} />
                 </button>
               </div>
+              <p className="text-[12.5px] text-center text-slate-500 font-medium">Try: &quot;Show SEO summary&quot; or &quot;What are priority fixes?&quot;</p>
             </div>
-          </div>
-        </div>
-      )}
-    </>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Sparkle Button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setOpen(!open)}
+        className="h-[60px] w-[60px] rounded-full bg-gradient-to-br from-[#EC4899] to-[#9333EA] text-white shadow-[0_8px_30px_rgb(236,72,153,0.3)] flex items-center justify-center transition-all z-50 border border-white/20"
+      >
+        <AnimatePresence mode="wait">
+          {open ? (
+            <motion.div key="close" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 90 }}>
+              <X className="h-6 w-6" />
+            </motion.div>
+          ) : (
+            <motion.div key="chat" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.2 }}>
+              <Sparkles className="h-[28px] w-[28px]" strokeWidth={2.5} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </div>
   );
 }

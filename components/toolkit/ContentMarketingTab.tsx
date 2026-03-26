@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { BookOpen, PenTool, Sparkles, Layout } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-const CHART_COLORS = ["#6366f1", "#8b5cf6", "#22c55e", "#eab308"];
+const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED", "#A855F7"];
 
 export default function ContentMarketingTab() {
   const [subTab, setSubTab] = useState<"topic" | "seo" | "ai">("topic");
@@ -83,188 +86,261 @@ export default function ContentMarketingTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">Content Marketing Tool</h2>
-      <div className="flex gap-2 border-b border-border pb-2">
-        {(["topic", "seo", "ai"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setSubTab(t)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              subTab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {t === "topic" && "Topic Research"}
-            {t === "seo" && "SEO Writing Assistant"}
-            {t === "ai" && "AI Content Suggestions"}
-          </button>
-        ))}
+    <div className="space-y-10">
+      <div className="flex justify-center">
+        <div className="inline-flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200">
+          {[
+            { id: "topic", label: "Topic Research", icon: BookOpen },
+            { id: "seo", label: "Writing Assistant", icon: PenTool },
+            { id: "ai", label: "AI Suggestions", icon: Sparkles }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSubTab(tab.id as any)}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
+                subTab === tab.id ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <tab.icon className="h-4 w-4" />
+              <span className="hidden md:inline">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {subTab === "topic" && (
-        <>
-          <Input
-            label="Topic Keyword"
-            value={topicKeyword}
-            onChange={(e) => setTopicKeyword(e.target.value)}
-            disabled={loading}
-          />
-          <Button onClick={runTopicResearch} loading={loading}>
-            Research Topic
-          </Button>
-          {topicResult && (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-                  <h4 className="mb-2 font-medium text-card-foreground">Topic mix</h4>
-                  <div className="h-44">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
+      <AnimatePresence mode="wait">
+        {subTab === "topic" && (
+          <motion.div
+            key="topic"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="space-y-10"
+          >
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+              <div className="flex-1">
+                <Input theme="light"
+                  label="Topic Focus"
+                  value={topicKeyword}
+                  onChange={(e) => setTopicKeyword(e.target.value)}
+                  placeholder="e.g. quantum computing"
+                  disabled={loading}
+                />
+              </div>
+              <Button variant="dashboard" onClick={runTopicResearch} loading={loading} className="px-10 rounded-2xl">
+                Map Topic Universe
+              </Button>
+            </div>
+
+            {topicResult && (
+              <div className="space-y-10">
+                <div className="grid gap-8 sm:grid-cols-2">
+                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Semantic Density</h4>
+                    <div className="h-60">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: "Related", value: topicResult.related_searches.length, fill: CHART_COLORS[1] },
+                              { name: "Queries", value: topicResult.people_also_ask.length, fill: CHART_COLORS[2] },
+                            ]}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={8}
+                            stroke="none"
+                          >
+                            <Cell fill={CHART_COLORS[1]} />
+                            <Cell fill={CHART_COLORS[2]} />
+                          </Pie>
+                          <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Intent Scale</h4>
+                    <div className="h-60">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
                           data={[
-                            { name: "Related Searches", value: topicResult.related_searches.length, fill: CHART_COLORS[0] },
-                            { name: "People Also Ask", value: topicResult.people_also_ask.length, fill: CHART_COLORS[1] },
+                            { name: "Related", count: topicResult.related_searches.length },
+                            { name: "PAA", count: topicResult.people_also_ask.length },
                           ]}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={56}
-                          label={({ name, value }) => `${name}: ${value}`}
+                          margin={{ top: 0, bottom: 0 }}
                         >
-                          <Cell fill={CHART_COLORS[0]} />
-                          <Cell fill={CHART_COLORS[1]} />
-                        </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                          <YAxis hide />
+                          <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }} />
+                          <Bar dataKey="count" radius={[10, 10, 0, 0]} barSize={40}>
+                            <Cell fill={CHART_COLORS[1]} />
+                            <Cell fill={CHART_COLORS[2]} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-                  <h4 className="mb-2 font-medium text-card-foreground">Count by type</h4>
-                  <div className="h-44">
+
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                    <h4 className="text-xl font-black font-sans uppercase tracking-widest text-ai-blue mb-8">Related Vectors</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {topicResult.related_searches.map((s, i) => (
+                        <span key={i} className="px-4 py-2 rounded-xl bg-white border border-slate-100 text-sm font-bold hover:bg-slate-50 transition-colors cursor-default">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                    <h4 className="text-xl font-black font-sans uppercase tracking-widest text-ai-purple mb-8">User Intelligence (PAA)</h4>
+                    <div className="space-y-4">
+                      {topicResult.people_also_ask.map((q, i) => (
+                        <div key={i} className="p-4 rounded-xl bg-white border border-slate-100 text-sm font-medium italic text-slate-600">
+                          &quot;{q}&quot;
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {subTab === "seo" && (
+          <motion.div
+            key="seo"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-10"
+          >
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+              <Input theme="light"
+                label="Target Keyword Signal"
+                value={seoKeyword}
+                onChange={(e) => setSeoKeyword(e.target.value)}
+                placeholder="e.g. cloud security best practices"
+                disabled={loading}
+              />
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Asset Composition</label>
+                <textarea
+                  className="w-full min-h-[300px] bg-slate-50/50 rounded-2xl border border-slate-200 p-8 text-slate-800 font-sans leading-relaxed placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
+                  value={articleText}
+                  onChange={(e) => setArticleText(e.target.value)}
+                  placeholder="Paste your content here for deep analysis..."
+                  disabled={loading}
+                />
+              </div>
+              <div className="flex justify-center">
+                <Button variant="dashboard" onClick={runSeoAnalysis} loading={loading} size="lg" className="px-16 rounded-2xl">
+                  Run SEO Audit
+                </Button>
+              </div>
+            </div>
+
+            {seoResult && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-10"
+              >
+                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Structural Vitality</h4>
+                  <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={[
-                          { name: "Related", count: topicResult.related_searches.length, fill: CHART_COLORS[0] },
-                          { name: "PAA", count: topicResult.people_also_ask.length, fill: CHART_COLORS[1] },
+                          { name: "Words", value: seoResult.word_count, fill: CHART_COLORS[1] },
+                          { name: "Keywords", value: seoResult.keyword_count, fill: CHART_COLORS[2] },
+                          { name: "Density", value: seoResult.keyword_density_percent * 10, fill: CHART_COLORS[3] }, // scaled
+                          { name: "Readability", value: seoResult.readability_score, fill: CHART_COLORS[4] },
                         ]}
-                        margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                        margin={{ top: 0, bottom: 0 }}
                       >
-                        <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
-                        <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
-                        <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                          <Cell fill={CHART_COLORS[0]} />
+                        <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 900 }} axisLine={false} tickLine={false} />
+                        <YAxis hide />
+                        <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", borderRadius: "12px", color: "#1e293b" }} />
+                        <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={50}>
                           <Cell fill={CHART_COLORS[1]} />
+                          <Cell fill={CHART_COLORS[2]} />
+                          <Cell fill={CHART_COLORS[3]} />
+                          <Cell fill={CHART_COLORS[4]} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-border bg-card p-4 space-y-4 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
-                <div>
-                  <h4 className="font-medium text-card-foreground">Related Searches</h4>
-                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                    {topicResult.related_searches.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium text-card-foreground">People Also Ask</h4>
-                  <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                    {topicResult.people_also_ask.map((q, i) => (
-                      <li key={i}>{q}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
 
-      {subTab === "seo" && (
-        <>
-          <Input
-            label="Target Keyword"
-            value={seoKeyword}
-            onChange={(e) => setSeoKeyword(e.target.value)}
-            disabled={loading}
-          />
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Article Content</label>
-            <textarea
-              className="w-full min-h-[120px] rounded-xl border-2 border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={articleText}
-              onChange={(e) => setArticleText(e.target.value)}
-              placeholder="Paste your article..."
-              disabled={loading}
-            />
-          </div>
-          <Button onClick={runSeoAnalysis} loading={loading}>
-            Analyze Content
-          </Button>
-          {seoResult && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-                <h4 className="mb-3 font-medium text-card-foreground">SEO metrics</h4>
-                <div className="h-52">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[
-                        { name: "Words", value: seoResult.word_count, fill: CHART_COLORS[0] },
-                        { name: "Keyword count", value: seoResult.keyword_count, fill: CHART_COLORS[1] },
-                        { name: "Density %", value: seoResult.keyword_density_percent, fill: CHART_COLORS[2] },
-                        { name: "Readability", value: Math.min(100, Math.max(0, seoResult.readability_score)), fill: CHART_COLORS[3] },
-                      ]}
-                      margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-                    >
-                      <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 12 }} />
-                      <YAxis tick={{ fill: "currentColor", fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "8px" }} />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {CHART_COLORS.map((fill, i) => (
-                          <Cell key={i} fill={fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="grid gap-6 sm:grid-cols-4">
+                  {[
+                    { label: "Volume", val: seoResult.word_count, unit: "words", color: "text-ai-blue" },
+                    { label: "Matches", val: seoResult.keyword_count, unit: "tokens", color: "text-ai-purple" },
+                    { label: "Concentration", val: seoResult.keyword_density_percent, unit: "%", color: "text-emerald-600" },
+                    { label: "Clarity Score", val: seoResult.readability_score, unit: "/ 100", color: "text-[#9333EA]" },
+                  ].map(stat => (
+                    <div key={stat.label} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 text-center border border-slate-100 bg-white">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{stat.label}</p>
+                      <p className={cn("text-3xl font-black font-sans tabular-nums", stat.color)}>{stat.val}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-800/20 mt-1">{stat.unit}</p>
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div className="grid gap-2 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
-                <p><span className="text-muted-foreground">Word count:</span> {seoResult.word_count}</p>
-                <p><span className="text-muted-foreground">Keyword count:</span> {seoResult.keyword_count}</p>
-                <p><span className="text-muted-foreground">Keyword density %:</span> {seoResult.keyword_density_percent}</p>
-                <p><span className="text-muted-foreground">Readability score:</span> {seoResult.readability_score}</p>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+              </motion.div>
+            )}
+          </motion.div>
+        )}
 
-      {subTab === "ai" && (
-        <>
-          <Input
-            label="Topic for AI Suggestions"
-            value={aiKeyword}
-            onChange={(e) => setAiKeyword(e.target.value)}
-            disabled={loading}
-          />
-          <Button onClick={runAiSuggestions} loading={loading}>
-            Generate AI Suggestions
-          </Button>
-          {aiResult && (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-              <pre className="whitespace-pre-wrap text-sm text-card-foreground">{aiResult}</pre>
+        {subTab === "ai" && (
+          <motion.div
+            key="ai"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-10"
+          >
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+              <div className="flex-1">
+                <Input theme="light"
+                  label="Seed Concept"
+                  value={aiKeyword}
+                  onChange={(e) => setAiKeyword(e.target.value)}
+                  placeholder="e.g. futuristic city design"
+                  disabled={loading}
+                />
+              </div>
+              <Button variant="dashboard" onClick={runAiSuggestions} loading={loading} className="px-10 rounded-2xl">
+                Synthesize Creative Strategy
+              </Button>
             </div>
-          )}
-        </>
-      )}
+
+            {aiResult && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-12 bg-gradient-to-br from-white/10 to-transparent relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 p-8">
+                  <Sparkles className="h-10 w-10 text-[#9333EA] opacity-20 group-hover:scale-125 transition-transform duration-700" />
+                </div>
+                <div className="relative z-10 prose prose-invert max-w-none">
+                  <h4 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 mb-8 border-b border-slate-200 pb-4">AI Insight Stream</h4>
+                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-slate-600">{aiResult}</pre>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

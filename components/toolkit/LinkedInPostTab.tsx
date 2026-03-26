@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Linkedin, Sparkles, Edit3, Wand2, CheckCircle2, Send, Trash2, Mail, Key, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
@@ -32,7 +35,30 @@ export default function LinkedInPostTab() {
       const data = await api.linkedin.generate(prompt.trim());
       setPost(data.post);
       setOriginalPrompt(prompt.trim());
-      toast("Post generated. Choose an option below.", "success");
+      toast("Post generated successfully.", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Request failed.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateAgain = async () => {
+    const toUse = originalPrompt || prompt;
+    if (!toUse.trim()) {
+      toast("No previous prompt to regenerate.", "error");
+      return;
+    }
+    setLoading(true);
+    setPost(null);
+    setShowImprove(false);
+    setShowPublish(false);
+    setPublishStatus(null);
+    try {
+      const data = await api.linkedin.generate(toUse.trim());
+      setPost(data.post);
+      setOriginalPrompt(toUse.trim());
+      toast("Post regenerated.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Request failed.", "error");
     } finally {
@@ -55,7 +81,7 @@ export default function LinkedInPostTab() {
       setPost(data.post);
       setShowImprove(false);
       setImproveFeedback("");
-      toast("Post improved. You can edit, improve again, or publish.", "success");
+      toast("Post refined by AI.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Request failed.", "error");
     } finally {
@@ -85,184 +111,235 @@ export default function LinkedInPostTab() {
   const showOptions = post != null && !isEditing && !showImprove && !showPublish && !publishStatus;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-foreground">Auto LinkedIn Post</h2>
-      <p className="text-sm text-muted-foreground">
-        Enter a topic to generate a professional LinkedIn post. Then approve and post, edit, or improve it.
-      </p>
-
-      {post == null && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Topic or prompt</label>
-            <textarea
-              className="w-full min-h-[100px] rounded-xl border-2 border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. Tips for remote team productivity"
-              disabled={loading}
-            />
-          </div>
-          <Button onClick={handleGenerate} loading={loading}>
-            Generate post
-          </Button>
-        </>
-      )}
-
-      {post != null && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-            <h3 className="mb-2 text-sm font-semibold text-card-foreground">Post</h3>
-            {isEditing ? (
-              <>
-                <textarea
-                  className="w-full min-h-[180px] rounded-xl border-2 border-border bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  value={currentPost}
-                  onChange={(e) => setPost(e.target.value)}
-                  disabled={loading}
-                />
-                <Button onClick={handleDoneEditing} className="mt-3" disabled={loading}>
-                  Done editing
-                </Button>
-              </>
-            ) : (
-              <pre className="whitespace-pre-wrap text-sm text-card-foreground font-sans">{currentPost}</pre>
-            )}
-          </div>
-
-          {showOptions && (
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={() => {
-                  setShowPublish(true);
-                  setShowImprove(false);
-                }}
-                disabled={loading}
-              >
-                Approve and post
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsEditing(true);
-                  setShowImprove(false);
-                  setShowPublish(false);
-                }}
-                disabled={loading}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowImprove(true);
-                  setShowPublish(false);
-                  setIsEditing(false);
-                }}
-                disabled={loading}
-              >
-                Improve
-              </Button>
+    <div className="space-y-10">
+      <AnimatePresence mode="wait">
+        {post == null ? (
+          <motion.div
+            key="input"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Sparkles className="h-5 w-5 text-[#9333EA]" />
+              <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Post Manifestation</h4>
             </div>
-          )}
-
-          {showImprove && (
-            <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <label className="block text-sm font-medium text-foreground">What would you like to improve?</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Core Concept / Intent</label>
               <textarea
-                className="w-full min-h-[80px] rounded-xl border-2 border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                value={improveFeedback}
-                onChange={(e) => setImproveFeedback(e.target.value)}
-                placeholder="e.g. Make it shorter, more formal, add a question at the end"
+                className="w-full min-h-[200px] bg-slate-50/50 rounded-2xl border border-slate-200 p-8 text-slate-800 font-sans leading-relaxed placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g. Discuss the future of autonomous agents in industry..."
                 disabled={loading}
               />
-              <div className="flex gap-2">
-                <Button onClick={handleImproveSubmit} loading={loading}>
-                  Get improved version
+            </div>
+            <div className="flex justify-center">
+              <Button variant="dashboard" onClick={handleGenerate} loading={loading} size="lg" className="px-16 rounded-2xl group">
+                <Linkedin className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
+                Generate LinkedIn Transmission
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="result"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Linkedin className="h-32 w-32" />
+              </div>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-[#9333EA] animate-pulse" />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Candidate Transmission</h4>
+                </div>
+                {isEditing && (
+                  <Button variant="dashboard" onClick={handleDoneEditing} size="sm" className="rounded-xl">
+                    Finalize Edits
+                  </Button>
+                )}
+              </div>
+
+              <div className="relative group">
+                {isEditing ? (
+                  <textarea
+                    className="w-full min-h-[300px] bg-slate-50/50 rounded-2xl border border-slate-200 p-8 text-slate-800 font-sans leading-relaxed focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
+                    value={currentPost}
+                    onChange={(e) => setPost(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                  />
+                ) : (
+                  <div className="p-8 rounded-2xl bg-white border border-slate-100 font-sans text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    {currentPost}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {showOptions && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-wrap justify-center gap-3"
+              >
+                <Button
+                  variant="dashboard"
+                  onClick={() => setShowPublish(true)}
+                  disabled={loading}
+                  size="md"
+                  className="min-w-[180px] rounded-xl"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Approve & Broadcast
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => {
-                    setShowImprove(false);
-                    setImproveFeedback("");
-                  }}
+                  onClick={() => setIsEditing(true)}
                   disabled={loading}
+                  size="md"
+                  className="min-w-[160px] rounded-xl"
                 >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {showPublish && (
-            <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
-              <h3 className="text-sm font-semibold text-card-foreground">Publish to LinkedIn</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">LinkedIn email</label>
-                  <input
-                    type="email"
-                    className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    disabled={loading}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">LinkedIn password</label>
-                  <input
-                    type="password"
-                    className="w-full rounded-xl border-2 border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handlePublishSubmit} loading={loading}>
-                  Publish to LinkedIn
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Edit yourself
                 </Button>
                 <Button
                   variant="secondary"
+                  onClick={handleGenerateAgain}
+                  disabled={loading}
+                  size="md"
+                  className="min-w-[160px] rounded-xl"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate again
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowImprove(true)}
+                  disabled={loading}
+                  size="md"
+                  className="min-w-[160px] rounded-xl"
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  AI Augmentation
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  className="min-w-[44px] w-11 rounded-xl text-red-400 border-red-400/20 hover:bg-red-400/10"
                   onClick={() => {
-                    setShowPublish(false);
+                    setPost(null);
+                    setOriginalPrompt("");
+                    setPrompt("");
                   }}
                   disabled={loading}
                 >
-                  Cancel
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {publishStatus && (
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-sm font-medium text-green-600 dark:text-green-400">{publishStatus}</p>
-            </div>
-          )}
+            <AnimatePresence>
+              {showImprove && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-6"
+                >
+                  <div className="flex items-center gap-3">
+                    <Wand2 className="h-4 w-4 text-ai-purple" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-ai-purple">Feedback Loop</h4>
+                  </div>
+                  <textarea
+                    className="w-full min-h-[100px] bg-slate-50/50 rounded-2xl border border-slate-200 p-6 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
+                    value={improveFeedback}
+                    onChange={(e) => setImproveFeedback(e.target.value)}
+                    placeholder="e.g. Optimize for technical audience, add industry keywords..."
+                    disabled={loading}
+                  />
+                  <div className="flex gap-4">
+                    <Button variant="dashboard" onClick={handleImproveSubmit} loading={loading} className="px-8 rounded-xl">
+                      Re-manifest
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowImprove(false)} disabled={loading} className="px-8 rounded-xl">
+                      Abort
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
 
-          {(showOptions || isEditing || showImprove || showPublish) && !publishStatus && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setPost(null);
-                setOriginalPrompt("");
-                setIsEditing(false);
-                setShowImprove(false);
-                setImproveFeedback("");
-                setShowPublish(false);
-                setPublishStatus(null);
-              }}
-              disabled={loading}
-            >
-              Start over (new post)
-            </Button>
-          )}
-        </div>
-      )}
+              {showPublish && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8"
+                >
+                  <div className="flex items-center gap-3">
+                    <Linkedin className="h-5 w-5 text-ai-blue" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-ai-blue/60">Target Network Integration</h4>
+                  </div>
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Network Identifier</label>
+                      <div className="relative group">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-ai-blue transition-colors" />
+                        <input
+                          type="email"
+                          className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="your@nexus.com"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Access Token</label>
+                      <div className="relative group">
+                        <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-800/20 group-focus-within:text-ai-blue transition-colors" />
+                        <input
+                          type="password"
+                          className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-12 pr-4 py-4 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••••••"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button variant="dashboard" onClick={handlePublishSubmit} loading={loading} className="px-10 rounded-xl">
+                      Synchronize Signal
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowPublish(false)} disabled={loading} className="px-10 rounded-xl">
+                      Disconnect
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+
+              {publishStatus && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 border-emerald-500/20 bg-emerald-500/5 text-center"
+                >
+                  <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto mb-4" />
+                  <p className="text-xl font-black font-sans text-emerald-600 uppercase tracking-widest">{publishStatus}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
