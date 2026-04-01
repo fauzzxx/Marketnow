@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -17,14 +17,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Download, Database } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED", "#A855F7"];
 
-export default function KeywordResearchTab() {
+export default function KeywordResearchTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.keyword) setKeyword(initialValues.keyword);
+    }
+  }, [initialValues]);
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState<
     { keyword: string; estimated_search_volume_proxy: number; difficulty: string }[] | null
@@ -40,6 +47,7 @@ export default function KeywordResearchTab() {
     try {
       const data = await api.keywordResearch.analyze(keyword.trim());
       setKeywords(data.keywords);
+      trackActivity("keyword", keyword.trim(), undefined, { keyword: keyword.trim() });
       toast("Analysis complete.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Analysis failed.", "error");
@@ -66,7 +74,7 @@ export default function KeywordResearchTab() {
 
   return (
     <div className="space-y-10">
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+      <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
         <div className="flex-1">
           <Input theme="light"
             label="Root Keyword"
@@ -92,9 +100,9 @@ export default function KeywordResearchTab() {
             <div className="flex justify-between items-center px-4">
               <div className="flex items-center gap-3">
                 <Database className="h-5 w-5 text-ai-blue" />
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">Discovery Results</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Discovery Results</h3>
               </div>
-              <Button variant="outline" size="sm" onClick={downloadCsv} className="rounded-xl border-slate-200 hover:bg-white">
+              <Button variant="outline" size="sm" onClick={downloadCsv} className="rounded-xl border-slate-200 dark:border-[#2a2a2a] hover:bg-white dark:hover:bg-[#1a1a1a]">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
@@ -102,7 +110,7 @@ export default function KeywordResearchTab() {
 
             {keywords.length > 0 && (
               <div className="grid gap-8 lg:grid-cols-2">
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                   <h4 className="text-xl font-black font-sans uppercase tracking-widest mb-10 text-center">Volume Saturation</h4>
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -131,7 +139,7 @@ export default function KeywordResearchTab() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                   <h4 className="text-xl font-black font-sans uppercase tracking-widest mb-10 text-center">Difficulty Dynamics</h4>
                   <div className="h-72 relative">
                     <ResponsiveContainer width="100%" height="100%">
@@ -165,18 +173,18 @@ export default function KeywordResearchTab() {
               </div>
             )}
 
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="bg-white border-b border-slate-200 font-sans uppercase tracking-widest text-[10px] text-slate-500">
+                  <tr className="bg-white dark:bg-[#141414] border-b border-slate-200 dark:border-[#2a2a2a] font-sans uppercase tracking-widest text-[10px] text-slate-500 dark:text-gray-400">
                     <th className="p-6 text-left">Vector Keyword</th>
                     <th className="p-6 text-left">Est. Sync Volume</th>
                     <th className="p-6 text-left">Opportunity Score</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-600">
+                <tbody className="text-slate-600 dark:text-gray-400">
                   {keywords.map((k, i) => (
-                    <tr key={i} className="border-b border-slate-100 group hover:bg-white transition-colors">
+                    <tr key={i} className="border-b border-slate-100 dark:border-[#222222] group hover:bg-white dark:hover:bg-[#1a1a1a] transition-colors">
                       <td className="p-6 font-bold">{k.keyword}</td>
                       <td className="p-6 font-black tabular-nums text-ai-blue">{k.estimated_search_volume_proxy.toLocaleString()}</td>
                       <td className="p-6">

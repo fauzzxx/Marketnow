@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MapPin, Search, Star, MessageSquare, Info, Activity } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED"];
 
-export default function LocalSeoTab() {
+export default function LocalSeoTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [businessName, setBusinessName] = useState("");
   const [location, setLocation] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.businessName) setBusinessName(initialValues.businessName);
+      if (initialValues.location) setLocation(initialValues.location);
+    }
+  }, [initialValues]);
   const [loading, setLoading] = useState(false);
   const [business, setBusiness] = useState<Record<string, unknown> | null>(null);
   const [found, setFound] = useState<boolean | null>(null);
@@ -31,6 +39,7 @@ export default function LocalSeoTab() {
       const data = await api.localSeo.business(businessName.trim(), location.trim());
       setFound(data.found);
       setBusiness(data.business || null);
+      trackActivity("local", `${businessName.trim()}, ${location.trim()}`, undefined, { businessName: businessName.trim(), location: location.trim() });
       toast(data.found ? "Business found." : "No listing found.", data.found ? "success" : "info");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Check failed.", "error");
@@ -41,7 +50,7 @@ export default function LocalSeoTab() {
 
   return (
     <div className="space-y-10">
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-8 items-end">
+      <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-8 items-end">
         <div className="flex-1 space-y-8">
           <div className="grid gap-6 sm:grid-cols-2">
             <Input theme="light"
@@ -73,7 +82,7 @@ export default function LocalSeoTab() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex items-center justify-between">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div className={cn(
                   "h-16 w-16 rounded-2xl flex items-center justify-center border",
@@ -82,7 +91,7 @@ export default function LocalSeoTab() {
                   <MapPin className="h-8 w-8" />
                 </div>
                 <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">GMB Status</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-1">GMB Status</h4>
                   <p className="text-2xl font-black font-sans uppercase tracking-tight">
                     {found ? "Entity Synchronized" : "Unknown Entity"}
                   </p>
@@ -104,8 +113,8 @@ export default function LocalSeoTab() {
 
             {found && business && (
               <div className="grid gap-8 lg:grid-cols-2">
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col justify-between">
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10">Neural Metrics</h4>
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col justify-between">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-10">Neural Metrics</h4>
                   {(() => {
                     const b = business as { rating?: number; user_ratings_total?: number };
                     const hasMetrics = typeof b.rating === "number" || typeof b.user_ratings_total === "number";
@@ -131,26 +140,26 @@ export default function LocalSeoTab() {
                         </div>
                       );
                     }
-                    return <div className="h-48 flex items-center justify-center text-slate-800/20 italic">No quantitative data streams.</div>;
+                    return <div className="h-48 flex items-center justify-center text-slate-800/20 dark:text-gray-200/20 italic">No quantitative data streams.</div>;
                   })()}
                   <div className="flex gap-4 mt-8">
-                    <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                    <div className="flex-1 bg-slate-50 dark:bg-[#111111] p-4 rounded-xl border border-slate-100 dark:border-[#222222] text-center">
                       <Star className="h-4 w-4 mx-auto mb-2 text-yellow-500" />
                       <p className="text-xl font-black font-sans">{(business as any).rating || "0.0"}</p>
                     </div>
-                    <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                    <div className="flex-1 bg-slate-50 dark:bg-[#111111] p-4 rounded-xl border border-slate-100 dark:border-[#222222] text-center">
                       <MessageSquare className="h-4 w-4 mx-auto mb-2 text-ai-blue" />
                       <p className="text-xl font-black font-sans">{(business as any).user_ratings_total || "0"}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 bg-gradient-to-br from-white/5 to-transparent flex flex-col">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 bg-gradient-to-br from-white/5 to-transparent flex flex-col">
                   <div className="flex items-center gap-3 mb-8">
                     <Info className="h-5 w-5 text-ai-purple" />
-                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Raw Metadata</h4>
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Raw Metadata</h4>
                   </div>
-                  <pre className="flex-1 overflow-auto text-xs font-mono text-slate-500 bg-slate-50 p-6 rounded-2xl border border-slate-100 custom-scrollbar">
+                  <pre className="flex-1 overflow-auto text-xs font-mono text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-[#111111] p-6 rounded-2xl border border-slate-100 dark:border-[#222222] custom-scrollbar">
                     {JSON.stringify(business, null, 2)}
                   </pre>
                 </div>
@@ -158,13 +167,13 @@ export default function LocalSeoTab() {
             )}
 
             {!found && (
-              <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-20 text-center space-y-6">
+              <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-20 text-center space-y-6">
                 <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto">
                   <Activity className="h-10 w-10 text-red-500 animate-pulse" />
                 </div>
                 <div className="max-w-md mx-auto">
                   <h3 className="text-xl font-black font-sans uppercase tracking-widest mb-2">Zero Signals Detected</h3>
-                  <p className="text-slate-500 text-sm">We could not locate this entity in the local search grid. Verify the business name and geographic coordinates.</p>
+                  <p className="text-slate-500 dark:text-gray-400 text-sm">We could not locate this entity in the local search grid. Verify the business name and geographic coordinates.</p>
                 </div>
               </div>
             )}

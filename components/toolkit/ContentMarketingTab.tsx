@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BookOpen, PenTool, Sparkles, Layout } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED", "#A855F7"];
 
-export default function ContentMarketingTab() {
+export default function ContentMarketingTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [subTab, setSubTab] = useState<"topic" | "seo" | "ai">("topic");
   const [topicKeyword, setTopicKeyword] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.topicKeyword) setTopicKeyword(initialValues.topicKeyword);
+    }
+  }, [initialValues]);
   const [seoKeyword, setSeoKeyword] = useState("");
   const [articleText, setArticleText] = useState("");
   const [aiKeyword, setAiKeyword] = useState("");
@@ -41,6 +48,7 @@ export default function ContentMarketingTab() {
     try {
       const data = await api.content.topicResearch(topicKeyword.trim());
       setTopicResult(data);
+      trackActivity("content", topicKeyword.trim(), undefined, { topicKeyword: topicKeyword.trim() });
       toast("Topic research done.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Failed.", "error");
@@ -88,7 +96,7 @@ export default function ContentMarketingTab() {
   return (
     <div className="space-y-10">
       <div className="flex justify-center">
-        <div className="inline-flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200">
+        <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-[#1a1a1a] rounded-2xl border border-slate-200 dark:border-[#2a2a2a]">
           {[
             { id: "topic", label: "Topic Research", icon: BookOpen },
             { id: "seo", label: "Writing Assistant", icon: PenTool },
@@ -99,7 +107,7 @@ export default function ContentMarketingTab() {
               onClick={() => setSubTab(tab.id as any)}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-                subTab === tab.id ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 hover:text-slate-800"
+                subTab === tab.id ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
               )}
             >
               <tab.icon className="h-4 w-4" />
@@ -118,7 +126,7 @@ export default function ContentMarketingTab() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-1">
                 <Input theme="light"
                   label="Topic Focus"
@@ -136,8 +144,8 @@ export default function ContentMarketingTab() {
             {topicResult && (
               <div className="space-y-10">
                 <div className="grid gap-8 sm:grid-cols-2">
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
-                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Semantic Density</h4>
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-10 text-center">Semantic Density</h4>
                     <div className="h-60">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -164,8 +172,8 @@ export default function ContentMarketingTab() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
-                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Intent Scale</h4>
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-10 text-center">Intent Scale</h4>
                     <div className="h-60">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -189,21 +197,21 @@ export default function ContentMarketingTab() {
                 </div>
 
                 <div className="grid gap-8 lg:grid-cols-2">
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                     <h4 className="text-xl font-black font-sans uppercase tracking-widest text-ai-blue mb-8">Related Vectors</h4>
                     <div className="flex flex-wrap gap-3">
                       {topicResult.related_searches.map((s, i) => (
-                        <span key={i} className="px-4 py-2 rounded-xl bg-white border border-slate-100 text-sm font-bold hover:bg-slate-50 transition-colors cursor-default">
+                        <span key={i} className="px-4 py-2 rounded-xl bg-white dark:bg-[#141414] border border-slate-100 dark:border-[#222222] text-sm font-bold hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-default">
                           {s}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                     <h4 className="text-xl font-black font-sans uppercase tracking-widest text-ai-purple mb-8">User Intelligence (PAA)</h4>
                     <div className="space-y-4">
                       {topicResult.people_also_ask.map((q, i) => (
-                        <div key={i} className="p-4 rounded-xl bg-white border border-slate-100 text-sm font-medium italic text-slate-600">
+                        <div key={i} className="p-4 rounded-xl bg-white dark:bg-[#141414] border border-slate-100 dark:border-[#222222] text-sm font-medium italic text-slate-600 dark:text-gray-400">
                           &quot;{q}&quot;
                         </div>
                       ))}
@@ -223,7 +231,7 @@ export default function ContentMarketingTab() {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 space-y-8">
               <Input theme="light"
                 label="Target Keyword Signal"
                 value={seoKeyword}
@@ -232,9 +240,9 @@ export default function ContentMarketingTab() {
                 disabled={loading}
               />
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Asset Composition</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 ml-1">Asset Composition</label>
                 <textarea
-                  className="w-full min-h-[300px] bg-slate-50/50 rounded-2xl border border-slate-200 p-8 text-slate-800 font-sans leading-relaxed placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
+                  className="w-full min-h-[300px] bg-slate-50/50 dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#2a2a2a] p-8 text-slate-800 dark:text-gray-200 font-sans leading-relaxed placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all resize-none shadow-sm"
                   value={articleText}
                   onChange={(e) => setArticleText(e.target.value)}
                   placeholder="Paste your content here for deep analysis..."
@@ -254,8 +262,8 @@ export default function ContentMarketingTab() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="space-y-10"
               >
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10 text-center">Structural Vitality</h4>
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-10 text-center">Structural Vitality</h4>
                   <div className="h-60">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -288,10 +296,10 @@ export default function ContentMarketingTab() {
                     { label: "Concentration", val: seoResult.keyword_density_percent, unit: "%", color: "text-emerald-600" },
                     { label: "Clarity Score", val: seoResult.readability_score, unit: "/ 100", color: "text-[#9333EA]" },
                   ].map(stat => (
-                    <div key={stat.label} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 text-center border border-slate-100 bg-white">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{stat.label}</p>
+                    <div key={stat.label} className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8 text-center border border-slate-100 dark:border-[#222222] bg-white dark:bg-[#141414]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-2">{stat.label}</p>
                       <p className={cn("text-3xl font-black font-sans tabular-nums", stat.color)}>{stat.val}</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-800/20 mt-1">{stat.unit}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-800/20 dark:text-gray-200/20 mt-1">{stat.unit}</p>
                     </div>
                   ))}
                 </div>
@@ -308,7 +316,7 @@ export default function ContentMarketingTab() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-1">
                 <Input theme="light"
                   label="Seed Concept"
@@ -327,14 +335,14 @@ export default function ContentMarketingTab() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-12 bg-gradient-to-br from-white/10 to-transparent relative overflow-hidden group"
+                className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-12 bg-gradient-to-br from-white/10 to-transparent relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 p-8">
                   <Sparkles className="h-10 w-10 text-[#9333EA] opacity-20 group-hover:scale-125 transition-transform duration-700" />
                 </div>
                 <div className="relative z-10 prose prose-invert max-w-none">
-                  <h4 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 mb-8 border-b border-slate-200 pb-4">AI Insight Stream</h4>
-                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-slate-600">{aiResult}</pre>
+                  <h4 className="text-xl font-black font-sans uppercase tracking-widest text-slate-800 dark:text-gray-200 mb-8 border-b border-slate-200 dark:border-[#2a2a2a] pb-4">AI Insight Stream</h4>
+                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-slate-600 dark:text-gray-400">{aiResult}</pre>
                 </div>
               </motion.div>
             )}

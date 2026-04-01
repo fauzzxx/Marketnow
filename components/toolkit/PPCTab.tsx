@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -16,15 +16,22 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED", "#A855F7"];
 
-export default function PPCTab() {
+export default function PPCTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [activeSubTab, setActiveSubTab] = useState<"ads" | "calculator">("ads");
   const [keyword, setKeyword] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.keyword) setKeyword(initialValues.keyword);
+    }
+  }, [initialValues]);
   const [adsResult, setAdsResult] = useState<
     { ad_type: string; title: string; price: string; source: string; product_link: string }[] | null
   >(null);
@@ -50,6 +57,7 @@ export default function PPCTab() {
     try {
       const data = await api.ppc.getAds(keyword.trim());
       setAdsResult(data.ads);
+      trackActivity("ppc", keyword.trim(), undefined, { keyword: keyword.trim() });
       toast("Ads loaded.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Failed to fetch ads.", "error");
@@ -80,12 +88,12 @@ export default function PPCTab() {
   return (
     <div className="space-y-10">
       <div className="flex justify-center">
-        <div className="inline-flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200">
+        <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-[#1a1a1a] rounded-2xl border border-slate-200 dark:border-[#2a2a2a]">
           <button
             onClick={() => setActiveSubTab("ads")}
             className={cn(
               "px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-              activeSubTab === "ads" ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 hover:text-slate-800"
+              activeSubTab === "ads" ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
             )}
           >
             Ad Intelligence
@@ -94,7 +102,7 @@ export default function PPCTab() {
             onClick={() => setActiveSubTab("calculator")}
             className={cn(
               "px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-              activeSubTab === "calculator" ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 hover:text-slate-800"
+              activeSubTab === "calculator" ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
             )}
           >
             PPC ROI Predictor
@@ -111,7 +119,7 @@ export default function PPCTab() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-1">
                 <Input theme="light"
                   label="Target Keyword"
@@ -140,7 +148,7 @@ export default function PPCTab() {
                     fill: CHART_COLORS[i % CHART_COLORS.length],
                   }));
                   return (
-                    <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                    <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                       <h4 className="text-xl font-black font-sans uppercase tracking-widest mb-10 text-center">Competitive Distribution</h4>
                       <div className="h-64 relative">
                         <ResponsiveContainer width="100%" height="100%">
@@ -169,29 +177,29 @@ export default function PPCTab() {
                   );
                 })()}
 
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
                   <table className="w-full text-sm border-collapse">
                     <thead>
-                      <tr className="bg-white border-b border-slate-200 font-sans uppercase tracking-widest text-[10px] text-slate-500">
+                      <tr className="bg-white dark:bg-[#141414] border-b border-slate-200 dark:border-[#2a2a2a] font-sans uppercase tracking-widest text-[10px] text-slate-500 dark:text-gray-400">
                         <th className="p-6 text-left">Placement</th>
                         <th className="p-6 text-left">Ad Asset</th>
                         <th className="p-6 text-left">Price Point</th>
                         <th className="p-6 text-left">Network</th>
                       </tr>
                     </thead>
-                    <tbody className="text-slate-600">
+                    <tbody className="text-slate-600 dark:text-gray-400">
                       {adsResult.map((ad, i) => (
-                        <tr key={i} className="border-b border-slate-100 group hover:bg-white transition-colors">
+                        <tr key={i} className="border-b border-slate-100 dark:border-[#222222] group hover:bg-white dark:hover:bg-[#1a1a1a] transition-colors">
                           <td className="p-6 font-black uppercase text-[10px] text-ai-blue">{ad.ad_type}</td>
                           <td className="p-6 font-bold">{ad.title}</td>
                           <td className="p-6 font-black tabular-nums">{ad.price}</td>
-                          <td className="p-6"><span className="bg-white px-3 py-1 rounded-full text-xs border border-slate-100">{ad.source}</span></td>
+                          <td className="p-6"><span className="bg-white dark:bg-[#141414] px-3 py-1 rounded-full text-xs border border-slate-100 dark:border-[#222222]">{ad.source}</span></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   {adsResult.length === 0 && (
-                    <div className="p-20 text-center text-slate-500 font-black uppercase tracking-widest italic">Zero Ad signals detected for this vector.</div>
+                    <div className="p-20 text-center text-slate-500 dark:text-gray-400 font-black uppercase tracking-widest italic">Zero Ad signals detected for this vector.</div>
                   )}
                 </div>
               </div>
@@ -207,7 +215,7 @@ export default function PPCTab() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-10"
           >
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 items-end border border-slate-200">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 items-end">
               <Input theme="light" label="Cost Per Click ($)" type="number" value={String(cpc)} onChange={(e) => setCpc(Number(e.target.value) || 0)} />
               <Input theme="light" label="Daily Budget ($)" type="number" value={String(dailyBudget)} onChange={(e) => setDailyBudget(Number(e.target.value) || 0)} />
               <Input theme="light" label="Conv. Rate (%)" type="number" value={String(conversionRate)} onChange={(e) => setConversionRate(Number(e.target.value) || 0)} />
@@ -225,7 +233,7 @@ export default function PPCTab() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-10"
               >
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
                   <h4 className="text-xl font-black font-sans uppercase tracking-widest mb-10 text-center">24-Hour Projected Performance</h4>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -254,8 +262,8 @@ export default function PPCTab() {
                     { label: "Est. Revenue", val: `$${calcResult.estimated_revenue_per_day.toFixed(0)}`, color: "text-emerald-600" },
                     { label: "Est. P/L", val: `$${calcResult.estimated_profit_loss.toFixed(0)}`, color: calcResult.estimated_profit_loss >= 0 ? "text-[#9333EA]" : "text-red-500" },
                   ].map(stat => (
-                    <div key={stat.label} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 text-center border border-slate-100 bg-white hover:bg-slate-50 transition-colors">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{stat.label}</p>
+                    <div key={stat.label} className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8 text-center border border-slate-100 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-2">{stat.label}</p>
                       <p className={cn("text-3xl font-black font-sans tabular-nums", stat.color)}>{stat.val}</p>
                     </div>
                   ))}

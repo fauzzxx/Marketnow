@@ -18,9 +18,11 @@ export default async function DashboardPage() {
     return null;
   }
 
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || "";
+
   return (
     <DashboardClient
-      user={{ id: user.id, email: user.email ?? "" }}
+      user={{ id: user.id, email: user.email ?? "", name }}
     />
   );
 }

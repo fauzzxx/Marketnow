@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(find 'C:/Projects/New folder/login' -maxdepth 1 -name next.config.* -o -name tailwind.config.* -o -name .cursorrules -o -name README.md)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(curl -s -X POST http://localhost:5001/api/linkedin/generate -H \"Content-Type: application/json\" -d '{\"\"\"\"prompt\"\"\"\":\"\"\"\"test post about AI\"\"\"\"}')",
+      "Bash(curl -s -D - -X POST http://localhost:5001/api/linkedin/generate -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d '{\"\"\"\"prompt\"\"\"\":\"\"\"\"test\"\"\"\"}')",
+      "Bash(npx next:*)"
     ]
   }
 }

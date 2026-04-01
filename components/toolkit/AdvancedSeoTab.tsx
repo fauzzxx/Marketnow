@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Globe, Target, LineChart, Link2, Activity, ShieldCheck, Search } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 const CHART_COLORS = ["#EC4899", "#D946EF", "#9333EA", "#7C3AED", "#A855F7"];
 
-export default function AdvancedSeoTab() {
+export default function AdvancedSeoTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [subTab, setSubTab] = useState<"audit" | "onpage" | "position" | "backlinks">("audit");
   const [auditUrl, setAuditUrl] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.auditUrl) setAuditUrl(initialValues.auditUrl);
+    }
+  }, [initialValues]);
   const [onpageUrl, setOnpageUrl] = useState("");
   const [onpageKeyword, setOnpageKeyword] = useState("");
   const [positionDomain, setPositionDomain] = useState("");
@@ -48,6 +55,7 @@ export default function AdvancedSeoTab() {
     try {
       const data = await api.advanced.siteAudit(auditUrl.trim(), forceJs || undefined);
       setAuditResult(data);
+      trackActivity("advanced", auditUrl.trim(), auditUrl.trim(), { auditUrl: auditUrl.trim() });
       toast("Audit done.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Audit failed.", "error");
@@ -120,14 +128,14 @@ export default function AdvancedSeoTab() {
   return (
     <div className="space-y-10">
       <div className="flex justify-center flex-wrap gap-3">
-        <div className="inline-flex p-1.5 bg-slate-100/50 rounded-2xl border border-slate-200">
+        <div className="inline-flex p-1.5 bg-slate-100/50 dark:bg-[#1a1a1a] rounded-2xl border border-slate-200 dark:border-[#2a2a2a]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setSubTab(tab.id as any)}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300",
-                subTab === tab.id ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 hover:text-slate-800"
+                subTab === tab.id ? "bg-gradient-to-r from-[#EC4899] to-[#9333EA] text-white shadow-xl shadow-purple-500/20" : "text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
               )}
             >
               <tab.icon className="h-4 w-4" />
@@ -146,7 +154,7 @@ export default function AdvancedSeoTab() {
             exit={{ opacity: 0, y: -20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-1">
                 <Input theme="light"
                   label="Target Domain / URL"
@@ -187,8 +195,8 @@ export default function AdvancedSeoTab() {
                 )}
                 {/* Chart + Meta Summary Row */}
                 <div className="grid gap-8 lg:grid-cols-3">
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 lg:col-span-2">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8">Metadata Distribution</h4>
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 lg:col-span-2">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-8">Metadata Distribution</h4>
                     <div className="h-48">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -208,20 +216,20 @@ export default function AdvancedSeoTab() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col h-full">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col h-full">
                     <div className="mb-8">
                       <div className="flex items-center justify-between gap-4 mb-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#EC4899]">META TITLE</p>
-                        <p className="text-[10px] font-mono text-slate-500 whitespace-nowrap">{auditResult.title_length ?? 0} chars</p>
+                        <p className="text-[10px] font-mono text-slate-500 dark:text-gray-400 whitespace-nowrap">{auditResult.title_length ?? 0} chars</p>
                       </div>
                       <p className="text-xl font-black font-sans leading-tight line-clamp-3">{auditResult.title || "Not Found"}</p>
                     </div>
                     <div>
                       <div className="flex items-center justify-between gap-4 mb-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-ai-blue">META DESCRIPTION</p>
-                        <p className="text-[10px] font-mono text-slate-500 whitespace-nowrap">{auditResult.meta_description_length ?? 0} chars</p>
+                        <p className="text-[10px] font-mono text-slate-500 dark:text-gray-400 whitespace-nowrap">{auditResult.meta_description_length ?? 0} chars</p>
                       </div>
-                      <p className="text-xs text-slate-500 leading-relaxed italic">{auditResult.meta_description || "Not Found"}</p>
+                      <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed italic">{auditResult.meta_description || "Not Found"}</p>
                     </div>
                   </div>
                 </div>
@@ -229,44 +237,44 @@ export default function AdvancedSeoTab() {
                 {/* Extended Audit Details */}
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                   {/* Keywords */}
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-purple-500 mb-3">META KEYWORDS</p>
-                    <p className="text-xs text-slate-600 leading-relaxed">{auditResult.meta_keywords || "Not set"}</p>
+                    <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">{auditResult.meta_keywords || "Not set"}</p>
                   </div>
 
                   {/* Canonical */}
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-green-500 mb-3">CANONICAL URL</p>
-                    <p className="text-xs text-slate-600 leading-relaxed break-all">{auditResult.canonical_url || "Not set"}</p>
+                    <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed break-all">{auditResult.canonical_url || "Not set"}</p>
                   </div>
 
                   {/* Image Alt Coverage */}
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-3">IMAGE ALT COVERAGE</p>
                     <p className="text-3xl font-black">{auditResult.alt_coverage_percent ?? 0}%</p>
-                    <p className="text-[10px] text-slate-500 mt-1">{auditResult.images_with_alt ?? 0} of {auditResult.total_images ?? 0} images have alt text</p>
+                    <p className="text-[10px] text-slate-500 dark:text-gray-400 mt-1">{auditResult.images_with_alt ?? 0} of {auditResult.total_images ?? 0} images have alt text</p>
                   </div>
                 </div>
 
                 {/* Headings */}
                 <div className="grid gap-8 sm:grid-cols-2">
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#EC4899] mb-3">H1 TAGS ({auditResult.h1_count ?? 0})</p>
                     {(auditResult.h1_texts ?? []).length > 0 ? (
-                      <ul className="space-y-1">{(auditResult.h1_texts ?? []).map((t, i) => <li key={i} className="text-xs text-slate-600 truncate">{t}</li>)}</ul>
+                      <ul className="space-y-1">{(auditResult.h1_texts ?? []).map((t, i) => <li key={i} className="text-xs text-slate-600 dark:text-gray-400 truncate">{t}</li>)}</ul>
                     ) : <p className="text-xs text-slate-400 italic">No H1 tags found</p>}
                   </div>
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-[#D946EF] mb-3">H2 TAGS ({auditResult.h2_count ?? 0})</p>
                     {(auditResult.h2_texts ?? []).length > 0 ? (
-                      <ul className="space-y-1">{(auditResult.h2_texts ?? []).map((t, i) => <li key={i} className="text-xs text-slate-600 truncate">{t}</li>)}</ul>
+                      <ul className="space-y-1">{(auditResult.h2_texts ?? []).map((t, i) => <li key={i} className="text-xs text-slate-600 dark:text-gray-400 truncate">{t}</li>)}</ul>
                     ) : <p className="text-xs text-slate-400 italic">No H2 tags found</p>}
                   </div>
                 </div>
 
                 {/* Open Graph */}
                 {Object.keys(auditResult.open_graph ?? {}).length > 0 && (
-                  <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8">
+                  <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8">
                     <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-4">OPEN GRAPH TAGS</p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {Object.entries(auditResult.open_graph ?? {}).map(([key, val]) => (
@@ -275,7 +283,7 @@ export default function AdvancedSeoTab() {
                           {key === "og:image" ? (
                             <img src={val} alt="OG Image" className="mt-1 rounded-lg max-h-32 object-cover" />
                           ) : (
-                            <p className="text-xs text-slate-600 truncate">{val}</p>
+                            <p className="text-xs text-slate-600 dark:text-gray-400 truncate">{val}</p>
                           )}
                         </div>
                       ))}
@@ -295,7 +303,7 @@ export default function AdvancedSeoTab() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 space-y-8">
               <div className="grid gap-6 sm:grid-cols-2">
                 <Input theme="light"
                   label="Target Signal (Keyword)"
@@ -320,14 +328,14 @@ export default function AdvancedSeoTab() {
             </div>
 
             {onpageResult !== null && (
-              <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-20 text-center space-y-6">
+              <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-20 text-center space-y-6">
                 <div className="relative inline-block">
                   <div className="absolute inset-0 bg-[#9333EA] blur-3xl opacity-10 animate-pulse" />
-                  <p className="text-8xl font-black font-sans tabular-nums text-slate-800 relative">{onpageResult}</p>
+                  <p className="text-8xl font-black font-sans tabular-nums text-slate-800 dark:text-gray-200 relative">{onpageResult}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Keyword Frequency Matches</h4>
-                  <p className="text-xs text-slate-800/20 mt-1 max-w-xs mx-auto">Detected instances of target keyword within the contextual domain provided.</p>
+                  <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Keyword Frequency Matches</h4>
+                  <p className="text-xs text-slate-800/20 dark:text-gray-200/20 mt-1 max-w-xs mx-auto">Detected instances of target keyword within the contextual domain provided.</p>
                 </div>
               </div>
             )}
@@ -342,7 +350,7 @@ export default function AdvancedSeoTab() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 space-y-8">
               <div className="grid gap-6 sm:grid-cols-2">
                 <Input theme="light"
                   label="Your Entity (Domain)"
@@ -367,7 +375,7 @@ export default function AdvancedSeoTab() {
             </div>
 
             {positionResult && (
-              <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-20 flex flex-col items-center text-center space-y-8 overflow-hidden relative">
+              <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-20 flex flex-col items-center text-center space-y-8 overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-10 opacity-5">
                   <Target className="h-64 w-64" />
                 </div>
@@ -381,7 +389,7 @@ export default function AdvancedSeoTab() {
                   <h4 className="text-xl font-black font-sans uppercase tracking-widest">
                     {positionResult.found ? "Successful Positioning" : "Orbiting... (Not Found)"}
                   </h4>
-                  <p className="text-sm text-slate-500 mt-2 max-w-sm">
+                  <p className="text-sm text-slate-500 dark:text-gray-400 mt-2 max-w-sm">
                     {positionResult.found
                       ? `Your entity is currently indexed at position #${positionResult.position} in the search grid.`
                       : "The target keyword did not surface your entity within the top 100 search results."}
@@ -400,7 +408,7 @@ export default function AdvancedSeoTab() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col md:flex-row gap-6 items-end">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-1">
                 <Input theme="light"
                   label="Domain for Backlink Pulse"
@@ -418,9 +426,9 @@ export default function AdvancedSeoTab() {
 
             {backlinkResult !== null && (
               <div className="grid gap-8 lg:grid-cols-2">
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 flex flex-col justify-between">
                   <div>
-                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 mb-10">Historical Influence</h4>
+                    <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 mb-10">Historical Influence</h4>
                     <div className="h-40">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -433,12 +441,12 @@ export default function AdvancedSeoTab() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-8 border-t border-slate-100 mt-8">
-                    <p className="text-sm font-black tracking-widest uppercase text-slate-500">Total Mentions</p>
+                  <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-[#222222] mt-8">
+                    <p className="text-sm font-black tracking-widest uppercase text-slate-500 dark:text-gray-400">Total Mentions</p>
                     <p className="text-3xl font-black font-sans text-ai-purple transition-all hover:scale-110">{backlinkResult.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 bg-white flex flex-col justify-center">
+                <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 bg-white dark:bg-[#141414] flex flex-col justify-center">
                   <div className="space-y-6">
                     <div className="flex items-start gap-4">
                       <div className="p-3 bg-ai-blue/10 rounded-xl">
@@ -446,7 +454,7 @@ export default function AdvancedSeoTab() {
                       </div>
                       <div>
                         <h5 className="text-sm font-black uppercase tracking-widest">Network Resonance</h5>
-                        <p className="text-xs text-slate-500 mt-1">High-density backlink strings detected for this domain. Influence remains stable.</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">High-density backlink strings detected for this domain. Influence remains stable.</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4">
@@ -455,7 +463,7 @@ export default function AdvancedSeoTab() {
                       </div>
                       <div>
                         <h5 className="text-sm font-black uppercase tracking-widest">Global Reach</h5>
-                        <p className="text-xs text-slate-500 mt-1">Spanning multiple geographic clusters and authority tiers.</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">Spanning multiple geographic clusters and authority tiers.</p>
                       </div>
                     </div>
                   </div>

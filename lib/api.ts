@@ -23,7 +23,12 @@ async function request<T>(
     });
     clearTimeout(timeoutId);
     const text = await res.text();
-    const data = text ? (JSON.parse(text) as T & { error?: string }) : ({} as T & { error?: string });
+    let data: T & { error?: string };
+    try {
+      data = text ? (JSON.parse(text) as T & { error?: string }) : ({} as T & { error?: string });
+    } catch {
+      throw new Error(`Server returned invalid response. Check that the backend is running at ${API_BASE}`);
+    }
     if (!res.ok) {
       throw new Error((data as { error?: string }).error || res.statusText || `Request failed (${res.status})`);
     }
@@ -47,20 +52,45 @@ async function request<T>(
 
 async function requestFormData<T>(
   endpoint: string,
-  formData: FormData
+  formData: FormData,
+  timeoutMs: number = 360_000
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const res = await fetch(url, {
-    method: "POST",
-    body: formData,
-    // Do not set Content-Type; browser sets multipart/form-data with boundary
-  });
-  const text = await res.text();
-  const data = (text ? JSON.parse(text) : {}) as T & { error?: string };
-  if (!res.ok) {
-    throw new Error(data.error || res.statusText || `Request failed (${res.status})`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+      // Do not set Content-Type; browser sets multipart/form-data with boundary
+    });
+    clearTimeout(timeoutId);
+    const text = await res.text();
+    let data: T & { error?: string };
+    try {
+      data = (text ? JSON.parse(text) : {}) as T & { error?: string };
+    } catch {
+      throw new Error(`Server returned invalid response. Check that the backend is running at ${API_BASE}`);
+    }
+    if (!res.ok) {
+      throw new Error(data.error || res.statusText || `Request failed (${res.status})`);
+    }
+    return data as T;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error) {
+      if (err.name === "AbortError") {
+        throw new Error("Request timed out. LinkedIn automation can take a while — try again.");
+      }
+      if (err.message === "Failed to fetch" || err.message.includes("Load failed") || err.message.includes("NetworkError")) {
+        throw new Error(`Cannot reach the API at ${url}. Make sure the backend is running.`);
+      }
+      throw err;
+    }
+    throw err;
   }
-  return data as T;
 }
 
 export const api = {
@@ -136,7 +166,18 @@ export const api = {
   },
   advanced: {
     siteAudit: (url: string, js?: boolean) =>
-      request<{ title: string; meta_description: string }>("/api/advanced/site-audit", {
+      request<{
+        title: string | null; title_length: number;
+        meta_description: string | null; meta_description_length: number;
+        meta_keywords: string | null;
+        open_graph: Record<string, string>;
+        canonical_url: string | null;
+        h1_count: number; h1_texts: string[];
+        h2_count: number; h2_texts: string[];
+        total_images: number; images_with_alt: number; alt_coverage_percent: number;
+        url_audited: string; status_code: number | null;
+        rendered_with: string;
+      }>("/api/advanced/site-audit", {
         method: "POST",
         body: { url, ...(js ? { js: true } : {}) },
       }),
@@ -171,16 +212,14 @@ export const api = {
         method: "POST",
         body: { prompt: prompt.trim(), feedback: feedback.trim() },
       }),
-    publish: (params: { email: string; password: string; post: string }) =>
-      request<{ status: string }>("/api/linkedin/publish", {
-        method: "POST",
-        body: {
-          email: params.email.trim(),
-          password: params.password,
-          post: params.post.trim(),
-        },
-        timeoutMs: 360_000, // 6 min for browser automation (login + LinkedIn + post)
-      }),
+    publish: (params: { email: string; password: string; post: string; image?: File }) => {
+      const formData = new FormData();
+      formData.append("email", params.email.trim());
+      formData.append("password", params.password);
+      formData.append("post", params.post.trim());
+      if (params.image) formData.append("image", params.image);
+      return requestFormData<{ status: string }>("/api/linkedin/publish", formData);
+    },
   },
 
   email: {

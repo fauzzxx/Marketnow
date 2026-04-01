@@ -4,13 +4,20 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Youtube, Sparkles, Video, Play, FileText, Share2, Clipboard, Edit3, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 
 const FALLBACK_SCRIPT_PREFIX = "Market Now Protocol: Analyzing";
 
-export default function YTScriptTab() {
+export default function YTScriptTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [idea, setIdea] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.idea) setIdea(initialValues.idea);
+    }
+  }, [initialValues]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ idea: string; script: string } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -42,6 +49,7 @@ export default function YTScriptTab() {
       setResult({ idea: data.idea || idea.trim(), script });
       setEditedScript(script);
       setIsEditing(false);
+      trackActivity("yt-script", idea.trim(), undefined, { idea: idea.trim() });
       toast("Manifested production-ready script.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Generation failed.", "error");
@@ -80,18 +88,18 @@ export default function YTScriptTab() {
 
   return (
     <div className="space-y-10">
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+      <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 space-y-8">
         <div className="flex items-center gap-3 mb-2">
           <Youtube className="h-6 w-6 text-[#FF0000]" />
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Scripting Paradigm</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Scripting Paradigm</h4>
         </div>
 
         <div className="space-y-3">
-          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Video Core Identity</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 ml-1">Video Core Identity</label>
           <div className="relative group">
-            <Video className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-800/10 group-focus-within:text-[#9333EA] transition-colors" />
+            <Video className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-800/10 dark:text-gray-200/10 group-focus-within:text-[#9333EA] transition-colors" />
             <input
-              className="w-full bg-slate-50/50 rounded-2xl border border-slate-200 pl-16 pr-6 py-6 text-slate-800 font-sans placeholder:text-slate-400 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
+              className="w-full bg-slate-50/50 dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-[#2a2a2a] pl-16 pr-6 py-6 text-slate-800 dark:text-gray-200 font-sans placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 transition-all shadow-sm"
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
               placeholder="e.g. 10 Secrets of High-Retention Storytelling"
@@ -117,20 +125,20 @@ export default function YTScriptTab() {
             className="space-y-8"
           >
             <div className="grid gap-8 lg:grid-cols-3">
-              <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-8 lg:col-span-1 bg-white space-y-6">
+              <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-8 lg:col-span-1 bg-white dark:bg-[#141414] space-y-6">
                 <div className="flex items-center gap-3">
                   <Sparkles className="h-4 w-4 text-ai-purple" />
                   <h5 className="text-[10px] font-black uppercase tracking-widest text-ai-purple">Extracted Vector</h5>
                 </div>
-                <p className="text-xl font-black font-sans text-slate-800 leading-tight">{result.idea}</p>
-                <div className="pt-6 border-t border-slate-100 space-y-4">
-                  <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-800/20 uppercase">
+                <p className="text-xl font-black font-sans text-slate-800 dark:text-gray-200 leading-tight">{result.idea}</p>
+                <div className="pt-6 border-t border-slate-100 dark:border-[#222222] space-y-4">
+                  <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-800/20 dark:text-gray-200/20 uppercase">
                     <Share2 className="h-3 w-3" />
                     Distribution Ready
                   </div>
                   <Button
                     variant="secondary"
-                    className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50"
+                    className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 dark:hover:bg-[#1a1a1a]"
                     onClick={() => copyToClipboard(displayScript)}
                   >
                     <Clipboard className="h-3.5 w-3.5 mr-2" />
@@ -139,14 +147,14 @@ export default function YTScriptTab() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 lg:col-span-2 relative overflow-hidden group">
+              <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 lg:col-span-2 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5">
                   <FileText className="h-48 w-48" />
                 </div>
                 <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
                   <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-ai-blue animate-pulse" />
-                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Complete Narrative Script</h5>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Complete Narrative Script</h5>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -175,13 +183,13 @@ export default function YTScriptTab() {
                   <div className="absolute -inset-4 bg-gradient-to-b from-primary/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                   {isEditing ? (
                     <textarea
-                      className="relative w-full min-h-[320px] font-sans text-sm text-slate-600 leading-relaxed rounded-2xl border border-slate-200 p-6 bg-slate-50/50 focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 resize-y max-h-[500px]"
+                      className="relative w-full min-h-[320px] font-sans text-sm text-slate-600 dark:text-gray-400 leading-relaxed rounded-2xl border border-slate-200 dark:border-[#2a2a2a] p-6 bg-slate-50/50 dark:bg-[#111111] focus:outline-none focus:border-[#9333EA]/30 focus:ring-4 focus:ring-[#9333EA]/10 resize-y max-h-[500px]"
                       value={editedScript}
                       onChange={(e) => setEditedScript(e.target.value)}
                       disabled={loading}
                     />
                   ) : (
-                    <pre className="relative font-sans text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
+                    <pre className="relative font-sans text-sm text-slate-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap max-h-[500px] overflow-y-auto custom-scrollbar pr-4">
                       {displayScript}
                     </pre>
                   )}

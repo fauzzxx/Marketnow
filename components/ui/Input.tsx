@@ -27,7 +27,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <label
             htmlFor={inputId}
             className={cn("block text-xs font-bold uppercase tracking-widest font-sans ml-1", 
-              isLight ? "text-slate-500" : "text-white/50"
+              isLight ? "text-slate-500 dark:text-gray-400" : "text-white/50"
             )}
            >
             {label}
@@ -36,7 +36,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative group">
           {icon && (
             <div className={cn("absolute left-4 top-1/2 -translate-y-1/2 transition-colors",
-              isLight ? "text-slate-400 group-focus-within:text-[#9333EA]" : "text-white/40 group-focus-within:text-[#9333EA]"
+              isLight ? "text-slate-400 dark:text-gray-500 group-focus-within:text-[#9333EA]" : "text-white/40 group-focus-within:text-[#9333EA]"
             )}>
               {icon}
             </div>
@@ -46,7 +46,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               "w-full h-12 rounded-[1rem] px-5 text-sm transition-all duration-300 outline-none backdrop-blur-md",
-              isLight ? "bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-[#9333EA]/50 focus:bg-white focus:ring-4 focus:ring-[#9333EA]/10 group-hover:border-slate-300 shadow-sm" : "bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-[#9333EA]/50 focus:bg-white/10 focus:ring-4 focus:ring-[#9333EA]/10 group-hover:border-white/20",
+              isLight ? "bg-white dark:bg-[#141414] border border-slate-200 dark:border-[#2a2a2a] text-slate-800 dark:text-gray-200 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:border-[#9333EA]/50 focus:bg-white dark:focus:bg-[#141414] focus:ring-4 focus:ring-[#9333EA]/10 group-hover:border-slate-300 dark:group-hover:border-[#333333] shadow-sm" : "bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:border-[#9333EA]/50 focus:bg-white/10 focus:ring-4 focus:ring-[#9333EA]/10 group-hover:border-white/20",
               error ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/10" : "",
               icon ? "pl-12" : "",
               className

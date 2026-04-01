@@ -232,6 +232,65 @@ CHATBOT_FUNCTION_DECLARATIONS = [
             ["idea"],
         ),
     ),
+    # LinkedIn Post Generator
+    genai_types.FunctionDeclaration(
+        name="linkedin_generate_post",
+        description="Generate a professional LinkedIn post from a topic or idea. Use when the user wants to create, write, or draft a LinkedIn post.",
+        parameters=_schema_obj(
+            {"prompt": genai_types.Schema(type=genai_types.Type.STRING, description="Topic or idea for the LinkedIn post")},
+            ["prompt"],
+        ),
+    ),
+    # LinkedIn Rewrite/Improve
+    genai_types.FunctionDeclaration(
+        name="linkedin_improve_post",
+        description="Improve or rewrite an existing LinkedIn post based on feedback. Use when the user wants to make a LinkedIn post better.",
+        parameters=_schema_obj(
+            {
+                "prompt": genai_types.Schema(type=genai_types.Type.STRING, description="Original post text or idea"),
+                "feedback": genai_types.Schema(type=genai_types.Type.STRING, description="What to improve or change"),
+            },
+            ["prompt", "feedback"],
+        ),
+    ),
+    # LinkedIn Auto Publish
+    genai_types.FunctionDeclaration(
+        name="linkedin_publish_post",
+        description="Publish a post directly to LinkedIn. Use when the user wants to post/publish something on LinkedIn. Requires LinkedIn email, password, and the post text.",
+        parameters=_schema_obj(
+            {
+                "email": genai_types.Schema(type=genai_types.Type.STRING, description="LinkedIn login email"),
+                "password": genai_types.Schema(type=genai_types.Type.STRING, description="LinkedIn login password"),
+                "post": genai_types.Schema(type=genai_types.Type.STRING, description="The post text to publish"),
+            },
+            ["email", "password", "post"],
+        ),
+    ),
+    # Bulk Email Sender
+    genai_types.FunctionDeclaration(
+        name="bulk_email_send",
+        description="Send bulk emails using Gmail SMTP. Use when the user wants to send marketing emails or bulk emails. Note: this requires an Excel file which cannot be sent via chat, so guide the user to use the Bulk Email tab instead.",
+        parameters=_schema_obj(
+            {
+                "sender_email": genai_types.Schema(type=genai_types.Type.STRING, description="Gmail address to send from"),
+                "subject": genai_types.Schema(type=genai_types.Type.STRING, description="Email subject line"),
+                "body": genai_types.Schema(type=genai_types.Type.STRING, description="Email body text"),
+            },
+            ["sender_email", "subject", "body"],
+        ),
+    ),
+    # Position Tracking (user-friendly alias)
+    genai_types.FunctionDeclaration(
+        name="position_tracking",
+        description="Track the Google search position/ranking of a website for a specific keyword. Use when the user asks 'where does my site rank' or 'what position is my website'.",
+        parameters=_schema_obj(
+            {
+                "domain": genai_types.Schema(type=genai_types.Type.STRING, description="Website domain (e.g. example.com)"),
+                "keyword": genai_types.Schema(type=genai_types.Type.STRING, description="Search keyword to track"),
+            },
+            ["domain", "keyword"],
+        ),
+    ),
 ]
 
 CHATBOT_TOOL = genai_types.Tool(function_declarations=CHATBOT_FUNCTION_DECLARATIONS)
@@ -287,11 +346,22 @@ _CHATBOT_API_MAP = {
     "advanced_position": ("POST", "/api/advanced/position", ["domain", "keyword"]),
     "advanced_backlinks": ("POST", "/api/advanced/backlinks", ["domain"]),
     "youtube_script_generate": ("POST", "/api/youtube/script", ["idea"]),
+    "linkedin_generate_post": ("POST", "/api/linkedin/generate", ["prompt"]),
+    "linkedin_improve_post": ("POST", "/api/linkedin/improve", ["prompt", "feedback"]),
+    "linkedin_publish_post": ("POST", "/api/linkedin/publish", ["email", "password", "post"]),
+    "bulk_email_send": ("POST", "/api/email/send-bulk", ["sender_email", "subject", "body"]),
+    "position_tracking": ("POST", "/api/advanced/position", ["domain", "keyword"]),
 }
 
 
 def _execute_chatbot_function(name, args):
     """Execute a chatbot function by calling the corresponding API via test client. Returns dict with result or error."""
+    if name == "bulk_email_send":
+        return {
+            "message": "Bulk email requires an Excel file with email addresses. Please use the Bulk Email tab in the Toolkit section where you can upload your Excel file. I can help you draft the email subject and body text though!",
+            "subject_suggestion": args.get("subject", ""),
+            "body_suggestion": args.get("body", ""),
+        }
     if name not in _CHATBOT_API_MAP:
         return {"error": f"Unknown function: {name}"}
     method, path, body_keys = _CHATBOT_API_MAP[name]
@@ -431,6 +501,7 @@ def _create_linkedin_driver():
         "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage",
         "--disable-software-rasterizer", "--disable-extensions",
         "--disable-notifications",
+        "--allow-file-access-from-files",
     ]
     prefs = {
         "credentials_enable_service": False,
@@ -717,7 +788,219 @@ def _click_post_button(driver, wait):
     time.sleep(6)
 
 
-def post_on_linkedin(post_text, email, password):
+def _upload_image_to_post(driver, wait, image_path):
+    """Upload an image to the LinkedIn post composer using multiple fallback approaches."""
+    abs_path = os.path.abspath(image_path).replace("/", "\\")
+    print(f"[LinkedIn] Attempting image upload: {abs_path}")
+    print(f"[LinkedIn] File exists: {os.path.exists(abs_path)}, size: {os.path.getsize(abs_path)} bytes")
+    image_uploaded = False
+
+    # --- Helper: make all file inputs visible and interactable ---
+    def _reveal_file_inputs():
+        driver.execute_script("""
+            // Regular DOM
+            document.querySelectorAll('input[type="file"]').forEach(function(input) {
+                input.style.display = 'block';
+                input.style.visibility = 'visible';
+                input.style.height = '1px';
+                input.style.width = '1px';
+                input.style.opacity = '0.01';
+                input.style.position = 'fixed';
+                input.style.top = '0';
+                input.style.left = '0';
+                input.removeAttribute('hidden');
+            });
+            // Shadow DOM
+            var root = document.querySelector("#interop-outlet");
+            if (root && root.shadowRoot) {
+                root.shadowRoot.querySelectorAll('input[type="file"]').forEach(function(input) {
+                    input.style.display = 'block';
+                    input.style.visibility = 'visible';
+                    input.style.height = '1px';
+                    input.style.width = '1px';
+                    input.style.opacity = '0.01';
+                    input.style.position = 'fixed';
+                    input.style.top = '0';
+                    input.style.left = '0';
+                    input.removeAttribute('hidden');
+                });
+            }
+        """)
+        time.sleep(1)
+
+    def _find_file_inputs():
+        """Find file inputs in both regular and shadow DOM."""
+        inputs = driver.find_elements(By.CSS_SELECTOR, 'input[type="file"]')
+        # Also check shadow DOM via JS
+        shadow_inputs = driver.execute_script("""
+            var results = [];
+            var root = document.querySelector("#interop-outlet");
+            if (root && root.shadowRoot) {
+                var inputs = root.shadowRoot.querySelectorAll('input[type="file"]');
+                inputs.forEach(function(inp) { results.push(inp); });
+            }
+            return results;
+        """) or []
+        all_inputs = list(inputs) + list(shadow_inputs)
+        print(f"[LinkedIn] Found {len(all_inputs)} file input(s) (regular: {len(inputs)}, shadow: {len(shadow_inputs)})")
+        return all_inputs
+
+    def _try_send_file(file_inputs):
+        """Try sending the file path to each file input."""
+        for i, fi in enumerate(file_inputs):
+            try:
+                fi.send_keys(abs_path)
+                print(f"[LinkedIn] File sent to input #{i} successfully")
+                return True
+            except Exception as e:
+                print(f"[LinkedIn] Failed on input #{i}: {e}")
+        return False
+
+    def _click_media_button():
+        """Click the media/image button in the LinkedIn composer."""
+        # JS approach — works across shadow DOM and regular DOM
+        clicked = driver.execute_script("""
+            function findAndClick(root) {
+                // CSS selectors for media button
+                var selectors = [
+                    'button[aria-label*="photo"]', 'button[aria-label*="Photo"]',
+                    'button[aria-label*="image"]', 'button[aria-label*="Image"]',
+                    'button[aria-label*="media"]', 'button[aria-label*="Media"]',
+                    'button[aria-label*="Add a photo"]',
+                    '.share-creation-state__detour-btn',
+                    '.image-sharing-detour-button',
+                    'button.share-promoted-detour-button--is-media',
+                    '[data-test-icon="image-medium"]',
+                    'li.share-creation-state__detour button'
+                ];
+                for (var s of selectors) {
+                    var el = root.querySelector(s);
+                    if (el) { el.click(); return s; }
+                }
+                // Fallback: search all buttons by aria-label text
+                var btns = Array.from(root.querySelectorAll("button"));
+                var btn = btns.find(function(b) {
+                    var label = (b.getAttribute("aria-label") || "").toLowerCase();
+                    return label.includes("photo") || label.includes("image") || label.includes("media");
+                });
+                if (btn) { btn.click(); return "aria-label-search"; }
+                return null;
+            }
+            // Try shadow DOM first
+            var root = document.querySelector("#interop-outlet");
+            if (root && root.shadowRoot) {
+                var result = findAndClick(root.shadowRoot);
+                if (result) return "shadow:" + result;
+            }
+            // Try regular DOM
+            var result = findAndClick(document);
+            if (result) return "regular:" + result;
+            return null;
+        """)
+        if clicked:
+            print(f"[LinkedIn] Clicked media button via: {clicked}")
+        return clicked
+
+    # ---- APPROACH 1: Find file inputs directly (they may exist in the composer already) ----
+    print("[LinkedIn] APPROACH 1: Looking for existing file inputs...")
+    _reveal_file_inputs()
+    file_inputs = _find_file_inputs()
+    if file_inputs and _try_send_file(file_inputs):
+        image_uploaded = True
+
+    # ---- APPROACH 2: Click media button, then find file inputs ----
+    if not image_uploaded:
+        print("[LinkedIn] APPROACH 2: Clicking media button first...")
+        result = _click_media_button()
+        if result:
+            time.sleep(3)
+            _reveal_file_inputs()
+            file_inputs = _find_file_inputs()
+            if file_inputs and _try_send_file(file_inputs):
+                image_uploaded = True
+        else:
+            print("[LinkedIn] Could not find media button")
+
+    # ---- APPROACH 3: XPath-based media button search ----
+    if not image_uploaded:
+        print("[LinkedIn] APPROACH 3: Trying XPath selectors for media button...")
+        xpath_selectors = [
+            '//button[contains(@aria-label, "photo")]',
+            '//button[contains(@aria-label, "image")]',
+            '//button[contains(@aria-label, "media")]',
+            '//button[contains(@aria-label, "Photo")]',
+            '//span[contains(@class, "share-creation-state__detour")]/ancestor::button',
+        ]
+        for xpath in xpath_selectors:
+            try:
+                btns = driver.find_elements(By.XPATH, xpath)
+                if btns:
+                    btns[0].click()
+                    print(f"[LinkedIn] Clicked via xpath: {xpath}")
+                    time.sleep(3)
+                    _reveal_file_inputs()
+                    file_inputs = _find_file_inputs()
+                    if file_inputs and _try_send_file(file_inputs):
+                        image_uploaded = True
+                        break
+            except Exception:
+                continue
+
+    # ---- Handle "Done" / "Next" button after image upload ----
+    if image_uploaded:
+        print("[LinkedIn] Image uploaded, looking for Done/Next button...")
+        time.sleep(4)
+        done_selectors_css = [
+            'button[aria-label="Done"]',
+            'button.share-box-image-editor__action-btn',
+        ]
+        done_selectors_xpath = [
+            '//button[.//span[text()="Done"]]',
+            '//button[.//span[text()="Next"]]',
+            '//button[text()="Done"]',
+            '//button[text()="Next"]',
+        ]
+        # Also check shadow DOM for Done/Next
+        driver.execute_script("""
+            var root = document.querySelector("#interop-outlet");
+            if (root && root.shadowRoot) {
+                var btns = Array.from(root.shadowRoot.querySelectorAll("button"));
+                var done = btns.find(function(b) {
+                    var t = (b.textContent || "").trim().toLowerCase();
+                    return t === "done" || t === "next";
+                });
+                if (done) { done.click(); return true; }
+            }
+            return false;
+        """)
+        time.sleep(1)
+        for sel in done_selectors_css:
+            try:
+                btns = driver.find_elements(By.CSS_SELECTOR, sel)
+                if btns:
+                    btns[0].click()
+                    print(f"[LinkedIn] Clicked Done/Next: {sel}")
+                    time.sleep(2)
+                    break
+            except Exception:
+                continue
+        else:
+            for sel in done_selectors_xpath:
+                try:
+                    btns = driver.find_elements(By.XPATH, sel)
+                    if btns:
+                        btns[0].click()
+                        print(f"[LinkedIn] Clicked Done/Next: {sel}")
+                        time.sleep(2)
+                        break
+                except Exception:
+                    continue
+        print("[LinkedIn] Image upload complete, proceeding to post...")
+    else:
+        print("[LinkedIn] WARNING: Could not upload image, will post text only")
+
+
+def post_on_linkedin(post_text, email, password, image_path=None):
     driver = _create_linkedin_driver()
     try:
         wait = WebDriverWait(driver, 30)
@@ -730,6 +1013,14 @@ def post_on_linkedin(post_text, email, password):
 
         _open_post_composer(driver, wait)
         _type_into_post_editor(driver, wait, post_text)
+
+        # Upload image if provided
+        if image_path and os.path.isfile(image_path):
+            try:
+                _upload_image_to_post(driver, wait, image_path)
+            except Exception as img_err:
+                print(f"[LinkedIn] Image upload failed, posting text only: {img_err}")
+
         _click_post_button(driver, wait)
     finally:
         try:
@@ -1534,41 +1825,63 @@ Improve the LinkedIn post based on feedback:
 
 @app.route("/api/linkedin/publish", methods=["POST"])
 def linkedin_publish():
-
-    data = request.get_json() or {}
-
-    email = (data.get("email") or "").strip()
-    password = (data.get("password") or "").strip()
-    post_text = (data.get("post") or "").strip()
+    # Support both JSON and multipart/form-data
+    if request.content_type and "multipart" in request.content_type:
+        email = (request.form.get("email") or "").strip()
+        password = (request.form.get("password") or "").strip()
+        post_text = (request.form.get("post") or "").strip()
+        image_file = request.files.get("image")
+    else:
+        data = request.get_json() or {}
+        email = (data.get("email") or "").strip()
+        password = (data.get("password") or "").strip()
+        post_text = (data.get("post") or "").strip()
+        image_file = None
 
     if not email or not password or not post_text:
         return jsonify({"error": "email, password and post required"}), 400
 
+    image_path = None
     try:
-        post_on_linkedin(post_text, email, password)
+        # Save uploaded image to temp file
+        if image_file and image_file.filename:
+            original_filename = image_file.filename
+            ext = os.path.splitext(original_filename)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".gif", ".webp"]:
+                ext = ".png"
+            temp_dir = tempfile.gettempdir()
+            image_path = os.path.join(temp_dir, f"linkedin_upload_{int(time.time())}{ext}")
+            image_file.save(image_path)
+            print(f"[LinkedIn] Image saved: {image_path}")
+            print(f"[LinkedIn] File exists: {os.path.exists(image_path)}, size: {os.path.getsize(image_path)} bytes")
+
+        post_on_linkedin(post_text, email, password, image_path=image_path)
         return jsonify({
             "status": "Post published successfully"
         })
     except Exception as e:
-        traceback.print_exc()  # Log full traceback in terminal for debugging
+        traceback.print_exc()
         err = str(e)
         if "linkedin_verification_required" in err.lower():
             return jsonify({
                 "error": "LinkedIn verification required. Open LinkedIn in a normal browser, complete verification, then try Publish again."
             }), 409
-        # Chrome/ChromeDriver native crash (stacktrace dump) -> friendly message
         if "stacktrace" in err.lower() or "symbols not available" in err.lower() or "unresolved backtrace" in err.lower():
             return jsonify({"error": "Chrome crashed during posting. Use \"Generate\" and paste the post into LinkedIn manually, or try again after restarting your PC."}), 503
-        # Driver download failed (DNS/offline) - webdriver_manager "Could not reach host"
         if "could not reach host" in err.lower() or "msedgedriver.azureedge.net" in err.lower() or "getaddrinfo failed" in err.lower():
             return jsonify({"error": "Cannot download browser driver (check internet/DNS). Try again when online, or set USE_CHROME_LINKEDIN=1 to use Chrome instead."}), 503
-        # Edge not found / Edge driver issue
         if any(x in err.lower() for x in ("msedge", "edge", "edgechromium", "microsoft edge")):
             return jsonify({"error": "Microsoft Edge not found or Edge driver failed. Install Edge (or set USE_CHROME_LINKEDIN=1 and restart the server to use Chrome)."}), 503
-        # Chrome/ChromeDriver install issues
         if any(x in err.lower() for x in ("chromedriver", "session not created", "cannot find chrome", "binary", "executable", "unknown error: cannot find")):
             return jsonify({"error": "LinkedIn publish requires Chrome and ChromeDriver. Install Chrome and try again, or use Generate only."}), 503
         return jsonify({"error": err}), 500
+    finally:
+        # Clean up temp image
+        if image_path:
+            try:
+                os.unlink(image_path)
+            except Exception:
+                pass
 
 
 # ==================10. Email Marketing ============ #
@@ -1645,18 +1958,47 @@ def chatbot():
             reply = "I've analyzed your top rivals. They are currently outperforming on long-tail keyword depth. Should we run a Conflict Analysis?"
         return jsonify({"reply": reply})
 
-    system_prompt = """
-You are an expert SEO assistant for a Mini Semrush toolkit.
+    system_prompt = """You are Market Now AI Copilot - an expert SEO and digital marketing assistant.
 
-You have access to several tools that can fetch real SEO data.
+You have access to these powerful tools:
 
-IMPORTANT RULES:
+SEO & ANALYSIS:
+- ai_visibility_analyze: Check how visible a brand is in Google search and AI answers
+- advanced_site_audit: Full SEO audit of any website (title, meta, headings, images, OG tags)
+- advanced_onpage: Count keyword occurrences on a page
+- advanced_position / position_tracking: Find where a site ranks for a keyword on Google
+- advanced_backlinks: Estimate backlinks/mentions for a domain
+- keyword_research_analyze: Get related keywords with search volume and difficulty
+- local_seo_business: Look up local business listings (Google Maps data)
 
-1. If the user's question can be answered using a tool, CALL the tool.
-2. If the user asks something general (SEO advice, marketing tips, explanations), answer normally using your own knowledge.
-3. If a tool requires parameters and the user didn't provide them, ask the user for them.
-4. After calling a tool and receiving results, summarize them clearly for the user.
-5. Always respond in a helpful SEO expert tone.
+COMPETITOR INTELLIGENCE:
+- competitor_compare: Compare two domains head-to-head (rankings, indexed pages, visibility)
+
+CONTENT & PPC:
+- content_topic_research: Get related searches and People Also Ask questions
+- content_seo_analysis: Analyze text for word count, keyword density, readability
+- content_ai_suggestions: AI-generated SEO suggestions (titles, meta, outlines, keywords)
+- ppc_ads: See paid ads running for a keyword
+- ppc_calculator: Calculate PPC ROI (clicks, conversions, revenue, profit)
+
+CONTENT CREATION:
+- youtube_script_generate: Generate a complete YouTube video script with title, hook, description, tags
+- linkedin_generate_post: Generate a professional LinkedIn post from a topic
+- linkedin_improve_post: Improve/rewrite a LinkedIn post based on feedback
+- linkedin_publish_post: Publish a post directly to LinkedIn (requires credentials)
+
+EMAIL MARKETING:
+- bulk_email_send: Send bulk marketing emails (note: for full functionality with Excel files, guide users to the Bulk Email tab)
+
+RULES:
+1. If the user's question needs real data, ALWAYS call the appropriate tool
+2. For general SEO advice, marketing tips, or explanations, answer from your own knowledge
+3. If a tool needs parameters the user didn't provide, ask for them
+4. After getting tool results, summarize them clearly with actionable insights
+5. Be conversational, helpful, and proactive - suggest next steps
+6. If the user asks "what can you do", list ALL the features above
+7. For bulk email with Excel files, tell the user to use the Bulk Email tab in the toolkit
+8. Never share or log user credentials - only pass them to the tool
 """
 
     messages = [{"role": "user", "content": message}]
@@ -1721,4 +2063,41 @@ if __name__ == "__main__":
     # which can cause clients to see "Cannot reach the API" during restart.
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+# import uvicorn
+# if __name__ == "__main__":
+#     uvicorn.run("server3:app", port=5001, reload=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import LoginForm from "@/components/auth/LoginForm";
@@ -15,7 +16,9 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

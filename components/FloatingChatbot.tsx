@@ -76,7 +76,7 @@ export default function FloatingChatbot() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="mb-4 w-[380px] max-w-[calc(100vw-2rem)] h-[550px] max-h-[calc(100vh-8rem)] flex flex-col rounded-[22px] bg-white shadow-2xl border border-slate-100 overflow-hidden transform-gpu origin-bottom-right"
+            className="mb-4 w-[380px] max-w-[calc(100vw-2rem)] h-[550px] max-h-[calc(100vh-8rem)] flex flex-col rounded-[22px] bg-white dark:bg-[#141414] shadow-2xl border border-slate-100 dark:border-[#222222] overflow-hidden transform-gpu origin-bottom-right"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[#EC4899] to-[#9333EA] px-5 py-4 flex items-center justify-between shrink-0">
@@ -94,7 +94,7 @@ export default function FloatingChatbot() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-5 pb-2 border-b border-slate-100 bg-white custom-scrollbar flex flex-col">
+            <div className="flex-1 overflow-y-auto p-5 pb-2 border-b border-slate-100 dark:border-[#222222] bg-white dark:bg-[#141414] custom-scrollbar flex flex-col">
               {messages.map((msg, i) => (
                 <div key={i} className={cn("flex mb-5 last:mb-0", msg.role === "user" ? "justify-end" : "justify-start")}>
                   {msg.role === "assistant" && (
@@ -106,8 +106,8 @@ export default function FloatingChatbot() {
                     className={cn(
                       "px-4 py-3 text-[14.5px] leading-relaxed relative max-w-[85%]",
                       msg.role === "user"
-                        ? "bg-[#F3F4F6] text-slate-800 rounded-2xl rounded-tr-[4px] shadow-sm ml-auto"
-                        : "bg-white border border-pink-100 rounded-2xl rounded-tl-[4px] shadow-sm text-slate-700"
+                        ? "bg-[#F3F4F6] dark:bg-[#1a1a1a] text-slate-800 dark:text-gray-200 rounded-2xl rounded-tr-[4px] shadow-sm ml-auto"
+                        : "bg-white dark:bg-[#141414] border border-pink-100 dark:border-pink-900/30 rounded-2xl rounded-tl-[4px] shadow-sm text-slate-700 dark:text-gray-300"
                     )}
                   >
                     <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -123,7 +123,7 @@ export default function FloatingChatbot() {
                   <div className="h-8 w-8 rounded-full bg-[#AC46D8] flex items-center justify-center shrink-0 mr-3 shadow-sm">
                     <Bot className="h-4 w-4 text-white" />
                   </div>
-                  <div className="bg-white border border-pink-100 rounded-2xl rounded-tl-[4px] px-4 py-3 shadow-sm flex items-center gap-[5px] h-[46px]">
+                  <div className="bg-white dark:bg-[#141414] border border-pink-100 dark:border-pink-900/30 rounded-2xl rounded-tl-[4px] px-4 py-3 shadow-sm flex items-center gap-[5px] h-[46px]">
                     <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="h-1.5 w-1.5 bg-[#AC46D8]/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -134,14 +134,14 @@ export default function FloatingChatbot() {
             </div>
 
             {/* InputArea */}
-            <div className="p-4 bg-white shrink-0">
+            <div className="p-4 bg-white dark:bg-[#141414] shrink-0">
               <div className="flex items-center gap-2 mb-2">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask me anything about SEO..."
-                  className="flex-1 border border-pink-200 rounded-[12px] py-[13px] px-4 text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-pink-300 resize-none h-[48px] custom-scrollbar overflow-hidden leading-tight bg-white"
+                  className="flex-1 border border-pink-200 dark:border-pink-900/30 rounded-[12px] py-[13px] px-4 text-sm text-slate-700 dark:text-gray-300 placeholder:text-slate-500 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-pink-300 resize-none h-[48px] custom-scrollbar overflow-hidden leading-tight bg-white dark:bg-[#141414]"
                   disabled={loading}
                 />
                 <button
@@ -152,7 +152,7 @@ export default function FloatingChatbot() {
                   <Send className="h-[22px] w-[22px]" strokeWidth={1.5} />
                 </button>
               </div>
-              <p className="text-[12.5px] text-center text-slate-500 font-medium">Try: &quot;Show SEO summary&quot; or &quot;What are priority fixes?&quot;</p>
+              <p className="text-[12.5px] text-center text-slate-500 dark:text-gray-400 font-medium">Try: &quot;Show SEO summary&quot; or &quot;What are priority fixes?&quot;</p>
             </div>
           </motion.div>
         )}

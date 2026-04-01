@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Swords, ExternalLink, Activity } from "lucide-react";
 import { api } from "@/lib/api";
+import { trackActivity } from "@/lib/activityTracker";
 import { toast } from "@/utils/toast";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -22,10 +23,18 @@ type CompareResult = {
   };
 };
 
-export default function CompetitorTab() {
+export default function CompetitorTab({ initialValues }: { initialValues?: Record<string, string> }) {
   const [domain1, setDomain1] = useState("");
   const [domain2, setDomain2] = useState("");
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (initialValues) {
+      if (initialValues.domain1) setDomain1(initialValues.domain1);
+      if (initialValues.domain2) setDomain2(initialValues.domain2);
+      if (initialValues.query) setQuery(initialValues.query);
+    }
+  }, [initialValues]);
   const [loading, setLoading] = useState(false);
   const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
 
@@ -39,6 +48,7 @@ export default function CompetitorTab() {
     try {
       const data = await api.competitor.compare(domain1.trim(), domain2.trim(), query.trim());
       setCompareResult(data);
+      trackActivity("competitor", `${domain1.trim()} vs ${domain2.trim()}`, domain1.trim(), { domain1: domain1.trim(), domain2: domain2.trim(), query: query.trim() });
       toast("Comparison complete.", "success");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Compare failed.", "error");
@@ -49,7 +59,7 @@ export default function CompetitorTab() {
 
   return (
     <div className="space-y-10">
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 space-y-8">
+      <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 space-y-8">
         <div className="grid gap-8 sm:grid-cols-2">
           <Input theme="light"
             label="Your Vector (Domain 1)"
@@ -90,10 +100,10 @@ export default function CompetitorTab() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10">
               <div className="flex items-center gap-3 mb-10">
                 <Activity className="h-5 w-5 text-ai-blue" />
-                <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Rank Displacement Analysis</h4>
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Rank Displacement Analysis</h4>
               </div>
               <div style={{ height: Math.max(400, 320 + (compareResult.graph_data.labels.reduce((m, l) => Math.max(m, l.length), 0)) * 3) }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -134,17 +144,17 @@ export default function CompetitorTab() {
                 { data: compareResult.summary.domain1, color: "text-[#9333EA]" },
                 { data: compareResult.summary.domain2, color: "text-ai-blue" }
               ].map((rival, idx) => (
-                <div key={idx} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-10 border border-slate-100 flex flex-col h-full">
+                <div key={idx} className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] p-10 border border-slate-100 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <h4 className={cn("text-2xl font-black font-sans truncate max-w-[200px]", rival.color)}>
                         {rival.data.domain}
                       </h4>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Vector Profile</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Vector Profile</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-black font-sans tabular-nums">{rival.data.indexed_pages.toLocaleString()}</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Pages</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400">Total Pages</p>
                     </div>
                   </div>
 
@@ -153,9 +163,9 @@ export default function CompetitorTab() {
                       <p className="text-[10px] font-black uppercase tracking-widest text-ai-purple">Core Assets</p>
                       <div className="space-y-2">
                         {rival.data.top_pages.slice(0, 4).map((p, i) => (
-                          <div key={i} className="group flex items-center justify-between p-4 rounded-xl bg-white border border-slate-100 hover:bg-slate-50 transition-colors">
+                          <div key={i} className="group flex items-center justify-between p-4 rounded-xl bg-white dark:bg-[#141414] border border-slate-100 dark:border-[#222222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors">
                             <span className="text-sm font-bold truncate max-w-[250px]" title={p.url}>{p.title || p.url}</span>
-                            <ExternalLink className="h-3 w-3 text-slate-800/20 group-hover:text-white transition-colors flex-shrink-0 ml-2" />
+                            <ExternalLink className="h-3 w-3 text-slate-800/20 dark:text-gray-200/20 group-hover:text-white transition-colors flex-shrink-0 ml-2" />
                           </div>
                         ))}
                       </div>
@@ -165,21 +175,21 @@ export default function CompetitorTab() {
               ))}
             </div>
 
-            <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-[#141414] rounded-[1.5rem] shadow-sm border border-slate-200 dark:border-[#2a2a2a] overflow-hidden">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="bg-white border-b border-slate-200 font-sans uppercase tracking-widest text-[10px] text-slate-500">
+                  <tr className="bg-white dark:bg-[#141414] border-b border-slate-200 dark:border-[#2a2a2a] font-sans uppercase tracking-widest text-[10px] text-slate-500 dark:text-gray-400">
                     <th className="p-6 text-left">Target Pulse</th>
                     <th className="p-6 text-left">{compareResult.summary.domain1.domain}</th>
                     <th className="p-6 text-left">{compareResult.summary.domain2.domain}</th>
                     <th className="p-6 text-left">Differential</th>
                   </tr>
                 </thead>
-                <tbody className="text-slate-600">
+                <tbody className="text-slate-600 dark:text-gray-400">
                   {compareResult.keyword_comparison.map((row, i) => {
                     const diff = (row.company1_position || 100) - (row.company2_position || 100);
                     return (
-                      <tr key={i} className="border-b border-slate-100 group hover:bg-white transition-colors">
+                      <tr key={i} className="border-b border-slate-100 dark:border-[#222222] group hover:bg-white dark:hover:bg-[#1a1a1a] transition-colors">
                         <td className="p-6 font-bold">{row.keyword}</td>
                         <td className="p-6 font-black tabular-nums text-[#9333EA]">{row.company1_position ?? "—"}</td>
                         <td className="p-6 font-black tabular-nums text-ai-blue">{row.company2_position ?? "—"}</td>
